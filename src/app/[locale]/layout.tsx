@@ -17,8 +17,7 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const [siteConfig, modules, siteTitle] = await Promise.all([
-    getSiteConfig(),
+  const [modules, siteTitle] = await Promise.all([
     listModules(),
     getLocaleTitle(locale),
   ]);
@@ -27,7 +26,7 @@ export default async function LocaleLayout({
     <div className="min-h-screen flex flex-col bg-[var(--bg-primary)]">
       <SiteHeader locale={locale} modules={modules} siteTitle={siteTitle} />
       <div className="flex-1 w-full">{children}</div>
-      <SiteFooter links={siteConfig.footerLinks} siteTitle={siteTitle} />
+      <SiteFooter siteTitle={siteTitle} />
     </div>
   );
 }

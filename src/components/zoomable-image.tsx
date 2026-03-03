@@ -1,30 +1,65 @@
 "use client";
 
-import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
-import type { ImgHTMLAttributes } from "react";
+import { useState } from "react";
+import { X } from "lucide-react";
 
-interface ZoomableImageProps extends ImgHTMLAttributes<HTMLImageElement> {
-  basePath: string;
+interface ZoomableImageProps {
+  src?: string;
+  alt?: string;
+  basePath?: string;
 }
 
-export function ZoomableImage({ src, alt, basePath, ...rest }: ZoomableImageProps) {
-  let processedSrc = typeof src === "string" ? src : "";
-  
-  if (processedSrc && !processedSrc.startsWith("http") && !processedSrc.startsWith("/")) {
-    processedSrc = processedSrc.replace(/^\.\//, "");
-    const moduleId = basePath.split("/").pop() || "";
-    processedSrc = `/docs/${moduleId}/${processedSrc}`;
+export function ZoomableImage({ src, alt, basePath }: ZoomableImageProps) {
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  if (!src) return null;
+
+  // 处理相对路径
+  let imageSrc = src;
+  if (!src.startsWith("http") && !src.startsWith("/") && basePath) {
+    const parts = basePath.split("/").filter(Boolean);
+    if (parts.length >= 2) {
+      const moduleId = parts[1];
+      const remainingPath = parts.slice(2).join("/");
+      if (remainingPath) {
+        imageSrc = `/docs/${moduleId}/${remainingPath}/${src}`;
+      } else {
+        imageSrc = `/docs/${moduleId}/${src}`;
+      }
+    }
   }
-  
+
   return (
-    <Zoom>
+    <>
       <img
-        src={processedSrc}
-        alt={alt || "文档图片"}
-        className="max-w-full rounded-lg border border-[var(--border-default)] shadow-sm my-6 cursor-zoom-in"
-        {...rest}
+        src={imageSrc}
+        alt={alt || "图片"}
+        className="max-w-full rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"
+        onClick={() => setIsZoomed(true)}
       />
-    </Zoom>
+
+      {isZoomed && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setIsZoomed(false)}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsZoomed(false);
+            }}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <img
+            src={imageSrc}
+            alt={alt || "图片"}
+            className="max-w-full max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
   );
 }

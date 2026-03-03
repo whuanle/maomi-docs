@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, FileText } from "lucide-react";
 
 interface CopyMarkdownUrlButtonProps {
   markdownContent: string;
@@ -25,17 +26,24 @@ export function CopyMarkdownUrlButton({ markdownContent }: CopyMarkdownUrlButton
     <button
       type="button"
       onClick={handleCopy}
-      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] rounded-lg border border-[var(--border-default)] transition-all duration-200"
+      className={`group flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border transition-all duration-200 ${
+        copied 
+          ? "text-green-600 bg-green-50 border-green-200" 
+          : "text-[var(--text-muted)] bg-[var(--bg-secondary)] border-[var(--border-default)] hover:text-[var(--text-primary)] hover:border-[var(--accent-400)]"
+      }`}
       title="复制 Markdown 源码"
     >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        {copied ? (
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-        ) : (
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-        )}
-      </svg>
-      <span>{copied ? "已复制" : "复制"}</span>
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5" />
+          <span>已复制</span>
+        </>
+      ) : (
+        <>
+          <FileText className="w-3.5 h-3.5" />
+          <span>复制 Markdown</span>
+        </>
+      )}
     </button>
   );
 }

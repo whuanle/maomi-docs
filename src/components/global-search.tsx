@@ -15,7 +15,6 @@ export function GlobalSearch({ locale }: { locale: string }) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -30,7 +29,6 @@ export function GlobalSearch({ locale }: { locale: string }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // 搜索功能
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
@@ -42,8 +40,7 @@ export function GlobalSearch({ locale }: { locale: string }) {
       const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&locale=${locale}`);
       const data = await response.json();
       setResults(data.results || []);
-    } catch (error) {
-      console.error("搜索失败:", error);
+    } catch {
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -51,36 +48,30 @@ export function GlobalSearch({ locale }: { locale: string }) {
   }, [locale]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      performSearch(query);
-    }, 300);
+    const timer = setTimeout(() => performSearch(query), 300);
     return () => clearTimeout(timer);
   }, [query, performSearch]);
 
   return (
     <>
-      {/* 搜索按钮 */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-secondary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg border border-[var(--border-default)] transition-colors"
+        className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-muted)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg border border-[var(--border-default)] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <span>搜索</span>
-        <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded">
-          <span>⌘</span><span>K</span>
+        <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded text-[var(--text-muted)]">
+          ⌘K
         </kbd>
       </button>
 
-      {/* 搜索弹窗 */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh] px-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
-          
-          <div className="relative w-full max-w-2xl bg-[var(--bg-tertiary)] rounded-xl shadow-2xl border border-[var(--border-default)] overflow-hidden">
-            {/* 搜索输入框 */}
+          <div className="absolute inset-0 bg-black/30" onClick={() => setIsOpen(false)} />
+          <div className="relative w-full max-w-xl bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-default)] overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-default)]">
               <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -95,13 +86,12 @@ export function GlobalSearch({ locale }: { locale: string }) {
               />
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               >
-                <span className="text-xs">ESC</span>
+                ESC
               </button>
             </div>
 
-            {/* 搜索结果 */}
             <div className="max-h-[60vh] overflow-y-auto">
               {isLoading ? (
                 <div className="p-8 text-center text-[var(--text-muted)]">搜索中...</div>
@@ -112,7 +102,7 @@ export function GlobalSearch({ locale }: { locale: string }) {
                       <Link
                         href={result.path}
                         onClick={() => setIsOpen(false)}
-                        className="flex flex-col px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors"
+                        className="flex flex-col px-4 py-2 hover:bg-[var(--bg-hover)] transition-colors"
                       >
                         <span className="font-medium text-[var(--text-primary)]">{result.title}</span>
                         <span className="text-sm text-[var(--text-muted)]">{result.module}</span>
@@ -122,9 +112,7 @@ export function GlobalSearch({ locale }: { locale: string }) {
                 </ul>
               ) : query ? (
                 <div className="p-8 text-center text-[var(--text-muted)]">未找到相关文档</div>
-              ) : (
-                <div className="p-8 text-center text-[var(--text-muted)]">输入关键词开始搜索</div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

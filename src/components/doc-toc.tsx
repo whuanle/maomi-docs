@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface TocItem {
   id: string;
   text: string;
-  level: number;
+  level: 2 | 3;
 }
 
 interface DocTocProps {
@@ -17,31 +17,28 @@ export function DocToc({ containerId }: DocTocProps) {
   const [activeId, setActiveId] = useState<string>("");
 
   useEffect(() => {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+    const root = document.getElementById(containerId);
+    if (!root) {
+      setItems([]);
+      return;
+    }
 
-    const headings = container.querySelectorAll("h2, h3");
-    const tocItems: TocItem[] = [];
-    
-    headings.forEach((heading, index) => {
+    const headings = Array.from(root.querySelectorAll("h2, h3"));
+    const tocItems: TocItem[] = headings.map((heading, index) => {
       const text = heading.textContent?.trim() ?? "";
-      if (!text) return;
-      
-      let id = heading.id;
+      let id = heading.id?.trim();
       if (!id) {
-        id = `section-${index}`;
+        id = `heading-${index}`;
         heading.id = id;
       }
-      
-      tocItems.push({
+      return {
         id,
         text,
         level: heading.tagName === "H2" ? 2 : 3,
-      });
+      };
     });
 
     setItems(tocItems);
-    setActiveId(tocItems[0]?.id ?? "");
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -51,7 +48,7 @@ export function DocToc({ containerId }: DocTocProps) {
           }
         });
       },
-      { rootMargin: "-80px 0px -70%" }
+      { rootMargin: "-80px 0px -60% 0px" }
     );
 
     headings.forEach((h) => observer.observe(h));
@@ -61,37 +58,42 @@ export function DocToc({ containerId }: DocTocProps) {
   if (items.length === 0) return null;
 
   return (
-    <aside className="hidden xl:block w-[240px] shrink-0">
+    <aside className="hidden xl:block w-[200px] shrink-0">
       <div className="sticky top-20 py-4">
-        <div className="pl-4 border-l border-[var(--border-default)]">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3 px-2">
-            本页目录
-          </h2>
-          <ul className="space-y-1">
-            {items.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={`#${item.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className={`block py-1 text-sm transition-all duration-200 border-l-2 -ml-[17px] ${
-                    activeId === item.id
-                      ? "text-[var(--accent-600)] border-[var(--accent-600)] font-medium"
-                      : "text-[var(--text-tertiary)] border-transparent hover:text-[var(--text-secondary)]"
-                  }`}
-                  style={{ paddingLeft: item.level === 3 ? "28px" : "16px" }}
-                >
-                  {item.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <h3 className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide mb-3 px-3">
+          本页目录
+        </h3>
+        <ul className="space-y-1">
+          {items.map((item) => (
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const el = document.getElementById(item.id);
+                  if (el) {
+                    window.scrollTo({
+                      top: el.offsetTop - 80,
+                      behavior: "smooth",
+                    });
+                  }
+                }}
+                className={`block px-3 py-1 text-sm transition-colors ${
+                  activeId === item.id
+                    ? "text-[var(--accent-600)] font-medium"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+                style={{ paddingLeft: item.level === 3 ? "24px" : "12px" }}
+              >
+                {item.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="mt-6 flex items-center gap-2 text-sm text-[var(--text-tertiary)] hover:text-[var(--accent-600)] transition-colors px-2"
+          className="flex items-center gap-1.5 mt-6 px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />

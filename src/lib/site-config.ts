@@ -10,5 +10,5 @@ export async function isSupportedLocale(locale: string) {
 }
 
 export async function getLocaleTitle(locale: string) {
-  return "技术文档";
+  return "猫咪文档";
 }
