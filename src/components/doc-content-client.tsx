@@ -37,6 +37,40 @@ interface DocContentClientProps {
   filePath?: string;
 }
 
+function getDocBaseDir(filePath: string): string {
+  const normalizedPath = filePath.replace(/\\/g, "/");
+  const docsMarker = "/docs/";
+  const markerIndex = normalizedPath.lastIndexOf(docsMarker);
+
+  let pathInDocs: string;
+  if (markerIndex >= 0) {
+    pathInDocs = normalizedPath.slice(markerIndex + docsMarker.length);
+  } else if (normalizedPath.startsWith("docs/")) {
+    pathInDocs = normalizedPath.slice("docs/".length);
+  } else {
+    pathInDocs = normalizedPath;
+  }
+
+  const docDir = path.posix.dirname(pathInDocs);
+  if (!docDir || docDir === ".") {
+    return "/docs";
+  }
+
+  return `/docs/${docDir}`;
+}
+
+function resolveAssetSrc(src: string, docBaseDir: string): string {
+  const trimmed = src.trim();
+
+  // 绝对 URL、协议相对 URL、根路径和锚点不处理
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  const normalizedSrc = trimmed.replace(/\\/g, "/");
+  return path.posix.join(docBaseDir, normalizedSrc);
+}
+
 export function DocContentClient({ content, filePath }: DocContentClientProps) {
   const articleRef = useRef<HTMLDivElement>(null);
 
@@ -60,15 +94,13 @@ export function DocContentClient({ content, filePath }: DocContentClientProps) {
 
   // 3. 处理图片路径
   if (filePath) {
-    // 获取文件所在目录，例如: docs/istio/ -> /docs/istio/
-    const dir = path.dirname(filePath);
-    const relativeDir = dir.replace(process.cwd(), "").replace(/\\/g, "/");
+    const docBaseDir = getDocBaseDir(filePath);
     
     // 处理 markdown 图片路径 ![alt](src)
     processedContent = processedContent.replace(
       /!\[([^\]]*)\]\((?!http|\/)([^)]+)\)/g,
       (match, alt, src) => {
-        return `![${alt}](${relativeDir}/${src})`;
+        return `![${alt}](${resolveAssetSrc(src, docBaseDir)})`;
       }
     );
     
@@ -76,7 +108,7 @@ export function DocContentClient({ content, filePath }: DocContentClientProps) {
     processedContent = processedContent.replace(
       /<img\s+([^\u003e]*)src=["'](?!http|\/)([^"']+)["']([^\u003e]*)\u003e/g,
       (match, before, src, after) => {
-        return `<img ${before}src="${relativeDir}/${src}"${after}>`;
+        return `<img ${before}src="${resolveAssetSrc(src, docBaseDir)}"${after}>`;
       }
     );
   }
@@ -132,7 +164,7 @@ export function DocContentClient({ content, filePath }: DocContentClientProps) {
               <img 
                 src={src} 
                 alt={alt} 
-                className="max-w-full rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"
+                className="block max-w-full mx-auto rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"
               />
             );
           },

@@ -40,7 +40,7 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
       <Sidebar items={sidebarItems} currentPath={currentPath} />
 
       <main className="flex-1 min-w-0">
-        <div className="max-w-[740px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+        <div className="max-w-[900px] mx-auto px-6 sm:px-8 lg:px-12 py-8 lg:py-10">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-5">
             <Link href={moduleRootPath} className="hover:text-[var(--accent-600)]">
@@ -50,20 +50,21 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
             </svg>
             <span className="text-[var(--text-primary)]">{title}</span>
-            {updatedAt && (
-              <>
-                <span className="mx-1">·</span>
-                <span className="text-xs text-[var(--text-muted)]">更新于 {updatedAt}</span>
-              </>
-            )}
           </nav>
 
-          {/* Title */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between gap-4">
-              <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)]">{title}</h1>
-              <CopyMarkdownUrlButton markdownContent={doc.contentRaw} />
+          {/* Title + Copy */}
+          <div className="mb-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="min-w-0 text-3xl sm:text-4xl font-bold text-[var(--text-primary)] leading-tight">
+                {title}
+              </h1>
+              <div className="shrink-0">
+                <CopyMarkdownUrlButton markdownContent={doc.contentRaw} />
+              </div>
             </div>
+            {updatedAt && (
+              <div className="mt-2 text-xs text-[var(--text-muted)]">更新于 {updatedAt}</div>
+            )}
           </div>
 
           {/* Content */}

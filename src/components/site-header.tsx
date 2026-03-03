@@ -22,7 +22,6 @@ export function SiteHeader({ locale, modules, siteTitle }: SiteHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const homeHref = `/${locale}`;
-  const isHomeActive = pathname === homeHref;
 
   const isModuleActive = (moduleId: string) => {
     const modulePath = `/${locale}/${moduleId}`;
@@ -33,35 +32,30 @@ export function SiteHeader({ locale, modules, siteTitle }: SiteHeaderProps) {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-[var(--border-default)] bg-[var(--bg-primary)]">
         <div className="h-full flex items-center justify-between px-4 lg:px-8 w-full">
-          {/* Logo 左侧 */}
-          <Link href={homeHref} className="flex items-center gap-2.5 text-[var(--accent-600)] shrink-0">
+          {/* Logo + 网站标题 - 可点击返回首页 */}
+          <Link 
+            href={homeHref} 
+            className="flex items-center gap-2.5 text-[var(--accent-600)] shrink-0 hover:opacity-80 transition-opacity"
+            title="返回首页"
+          >
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-600)] text-white flex items-center justify-center font-bold">
               文
             </div>
             <span className="font-semibold hidden sm:block">{siteTitle}</span>
           </Link>
 
-          {/* 导航菜单 中间 */}
-          <nav className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
-            <Link
-              href={homeHref}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                isHomeActive
-                  ? "text-[var(--accent-600)] font-medium"
-                  : "text-[var(--accent-600)] hover:bg-[var(--accent-50)]"
-              }`}
-            >
-              首页
-            </Link>
+          {/* 导航菜单 中间 - 去掉首页 */}
+          <nav className="hidden lg:flex items-stretch gap-1 absolute left-1/2 -translate-x-1/2 h-full">
             {modules.map((module) => (
               <Link
                 key={module.id}
                 href={`/${locale}/${module.id}`}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap ${
+                className={`inline-flex items-center h-full px-3 text-sm whitespace-nowrap transition-colors ${
                   isModuleActive(module.id)
-                    ? "text-[var(--accent-600)] font-medium"
-                    : "text-[var(--accent-600)] hover:bg-[var(--accent-50)]"
+                    ? "text-[var(--accent-700)] font-semibold border-b-2 border-[var(--accent-600)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--accent-700)]"
                 }`}
+                aria-current={isModuleActive(module.id) ? "page" : undefined}
               >
                 {module.title}
               </Link>
@@ -105,11 +99,7 @@ export function SiteHeader({ locale, modules, siteTitle }: SiteHeaderProps) {
             <Link
               href={homeHref}
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`px-4 py-3 rounded-md text-sm ${
-                isHomeActive
-                  ? "text-[var(--accent-600)] bg-[var(--accent-50)]"
-                  : "text-[var(--accent-600)] hover:bg-[var(--bg-hover)]"
-              }`}
+              className="px-4 py-3 rounded-md text-sm text-[var(--accent-600)] hover:bg-[var(--bg-hover)]"
             >
               首页
             </Link>

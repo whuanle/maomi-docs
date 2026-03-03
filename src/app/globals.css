@@ -12,6 +12,7 @@
   
   --text-primary: #1a1a1a;
   --text-secondary: #666666;
+  --text-prose: #2f2f35;
   --text-tertiary: #999999;
   --text-muted: #b3b3b3;
   --text-heading: #1a1a1a;
@@ -55,6 +56,7 @@
   
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
+  --text-prose: #d1d5db;
   --text-tertiary: #666666;
   --text-muted: #555555;
   --text-heading: #ffffff;
@@ -107,7 +109,7 @@ body {
 
 /* 文档排版 */
 .docs-prose { 
-  color: var(--text-secondary); 
+  color: var(--text-prose); 
   font-size: 15px; 
   line-height: 1.75; 
 }
