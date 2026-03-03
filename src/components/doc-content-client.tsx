@@ -81,11 +81,14 @@ export function DocContentClient({ content, filePath }: DocContentClientProps) {
     );
   }
 
-  // 高亮代码
+  // 高亮代码 - 延迟执行确保 ReactMarkdown 渲染完成
   useEffect(() => {
-    if (articleRef.current) {
-      Prism.highlightAllUnder(articleRef.current);
-    }
+    const timer = setTimeout(() => {
+      if (articleRef.current) {
+        Prism.highlightAllUnder(articleRef.current);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [processedContent]);
 
   return (
