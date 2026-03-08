@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CustomHeadElements } from "@/components/custom-head-elements";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getSiteConfig } from "@/lib/site-config";
 import "./globals.css";
@@ -21,13 +22,9 @@ export default async function RootLayout({
 
   return (
     <html lang="zh" suppressHydrationWarning>
-      <head
-        dangerouslySetInnerHTML={
-          siteConfig.customHeadHtml
-            ? { __html: siteConfig.customHeadHtml }
-            : undefined
-        }
-      />
+      <head>
+        <CustomHeadElements html={siteConfig.customHeadHtml} />
+      </head>
       <body className="antialiased">
         <ThemeProvider>
           {children}
