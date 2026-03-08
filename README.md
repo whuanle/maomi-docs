@@ -56,13 +56,13 @@ npm run start
 ### 1. 构建镜像
 
 ```bash
-docker build -t maomi-doc:latest .
+docker build -t maomi-docs:latest .
 ```
 
 ### 2. 使用镜像直接启动
 
 ```bash
-docker run --rm -p 3000:3000 maomi-doc:latest
+docker run --rm -p 3000:3000 maomi-docs:latest
 ```
 
 如果不做任何挂载，容器会使用镜像内部自带的 `config/` 内容。
@@ -90,7 +90,7 @@ Linux / macOS：
 ```bash
 docker run --rm -p 3000:3000 \
   -v "$(pwd)/config/site.json:/app/config/site.json:ro" \
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 Windows PowerShell：
@@ -98,7 +98,7 @@ Windows PowerShell：
 ```powershell
 docker run --rm -p 3000:3000 `
   -v "${PWD}\config\site.json:/app/config/site.json:ro" `
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 如果你希望整个配置目录一起替换，也可以挂载整个 `config` 目录：
@@ -106,7 +106,7 @@ docker run --rm -p 3000:3000 `
 ```bash
 docker run --rm -p 3000:3000 \
   -v "$(pwd)/config:/app/config:ro" \
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 ## 自定义 `docs` 目录映射
@@ -126,7 +126,7 @@ Linux / macOS：
 ```bash
 docker run --rm -p 3000:3000 \
   -v "$(pwd)/docs:/app/docs:ro" \
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 Windows PowerShell：
@@ -134,7 +134,7 @@ Windows PowerShell：
 ```powershell
 docker run --rm -p 3000:3000 `
   -v "${PWD}\docs:/app/docs:ro" `
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 ## 同时映射 `site.json` 和 `docs`
@@ -147,7 +147,7 @@ Linux / macOS：
 docker run --rm -p 3000:3000 \
   -v "$(pwd)/config/site.json:/app/config/site.json:ro" \
   -v "$(pwd)/docs:/app/docs:ro" \
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 Windows PowerShell：
@@ -156,7 +156,7 @@ Windows PowerShell：
 docker run --rm -p 3000:3000 `
   -v "${PWD}\config\site.json:/app/config/site.json:ro" `
   -v "${PWD}\docs:/app/docs:ro" `
-  maomi-doc:latest
+  maomi-docs:latest
 ```
 
 ## Docker 目录约定
