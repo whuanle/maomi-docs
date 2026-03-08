@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { listModules } from "@/lib/docs";
-import { getLocaleTitle, getSiteConfig, isSupportedLocale } from "@/lib/site-config";
+import { getSiteConfig, isSupportedLocale } from "@/lib/site-config";
 
 export default async function LocaleLayout({
   children,
@@ -17,16 +17,27 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const [modules, siteTitle] = await Promise.all([
+  const [modules, siteConfig] = await Promise.all([
     listModules(),
-    getLocaleTitle(locale),
+    getSiteConfig(),
   ]);
+
+  const siteTitle = siteConfig.title;
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-primary)]">
-      <SiteHeader locale={locale} modules={modules} siteTitle={siteTitle} />
+      <SiteHeader
+        locale={locale}
+        modules={modules}
+        siteTitle={siteTitle}
+        headerLinks={siteConfig.headerLinks}
+      />
       <div className="flex-1 w-full">{children}</div>
-      <SiteFooter siteTitle={siteTitle} />
+      <SiteFooter
+        siteTitle={siteTitle}
+        footerLinks={siteConfig.footerLinks}
+        beian={siteConfig.beian}
+      />
     </div>
   );
 }

@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Site Config
+
+Header right-side links, footer links, and filing info are all read from `config/site.json`.
+
+When deploying with Docker, mount the `config` directory and update `config/site.json` to change the page configuration without rebuilding the image.
+
 ## Getting Started
 
 First, run the development server:

@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { getSiteConfig } from "@/lib/site-config";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "技术文档",
-  description: "探索技术文档和教程",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = await getSiteConfig();
+
+  return {
+    title: siteConfig.title,
+    description: siteConfig.description,
+  };
+}
 
 export default function RootLayout({
   children,

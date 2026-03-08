@@ -1,0 +1,38 @@
+{
+  "title": "猫咪文档",
+  "description": "探索技术文档和教程",
+  "headerLinks": [
+    {
+      "label": "GitHub",
+      "href": "https://github.com",
+      "newTab": true
+    }
+  ],
+  "footerLinks": [
+    {
+      "label": "GitHub 仓库",
+      "href": "https://github.com",
+      "newTab": true
+    },
+    {
+      "label": "个人博客",
+      "href": "https://example.com/blog",
+      "newTab": true
+    },
+    {
+      "label": "官方网站",
+      "href": "https://example.com",
+      "newTab": true
+    }
+  ],
+  "beian": {
+    "icp": {
+      "text": "京ICP备12345678号-1",
+      "href": "https://beian.miit.gov.cn/"
+    },
+    "police": {
+      "text": "京公网安备11010502000001号",
+      "href": "http://www.beian.gov.cn/portal/registerSystemInfo"
+    }
+  }
+}
