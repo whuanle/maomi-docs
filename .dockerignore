@@ -1,8 +1,8 @@
 .git
 .gitignore
 .next
+docs
 node_modules
 npm-debug.log*
 README.md
 tsconfig.tsbuildinfo
-docs/.git
