@@ -41,6 +41,8 @@ npm run start
 - `headerLinks`：顶部右侧链接
 - `footerLinks`：底部链接
 - `beian`：备案信息
+- `customHeadHtml`：插入到页面 `<head>` 的自定义 HTML，可用于 Google/Microsoft 统计代码、站点验证标签等
+- `customHeadHtmlFile`：可选，指向一个 HTML 片段文件路径，适合直接粘贴第三方原始统计代码
 
 其中 `headerLinks` 和 `footerLinks` 每一项都支持：
 
@@ -48,6 +50,47 @@ npm run start
 - `href`：跳转地址
 - `icon`：可选，支持 Lucide 图标名或图片路径，例如 `github`、`book-open`、`/icons/github.svg`
 - `newTab`：可选，是否在新标签页打开
+
+### 插入统计代码
+
+如果你需要添加 Google 统计、Microsoft Clarity 或 Google Search Console 验证标签，有两种方式。
+
+方式一：直接在 `site.json` 中写 `customHeadHtml`。
+
+```json
+{
+  "title": "猫咪文档",
+  "description": "探索技术文档和教程",
+  "customHeadHtml": "<meta name=\"google-site-verification\" content=\"your-code\" />\n<script type=\"text/javascript\">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, \"clarity\", \"script\", \"your-clarity-id\");</script>"
+}
+```
+
+方式二：把原始代码放到单独文件中，再由 `site.json` 引用，通常更方便维护。
+
+`config/site.json`：
+
+```json
+{
+  "title": "猫咪文档",
+  "description": "探索技术文档和教程",
+  "customHeadHtmlFile": "config/custom-head.html"
+}
+```
+
+`config/custom-head.html`：
+
+```html
+<meta name="google-site-verification" content="your-code" />
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "your-clarity-id");
+</script>
+```
+
+如果同时配置了 `customHeadHtmlFile` 和 `customHeadHtml`，系统会先读取文件内容，再追加内联内容。
 
 ## Docker 使用
 

@@ -25,6 +25,7 @@ export interface SiteConfig {
   headerLinks: SiteLink[];
   footerLinks: SiteLink[];
   beian: SiteBeian;
+  customHeadHtml?: string;
 }
 
 const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -42,12 +43,68 @@ const DEFAULT_SITE_CONFIG: SiteConfig = {
       href: "http://www.beian.gov.cn/portal/registerSystemInfo",
     },
   },
+  customHeadHtml: undefined,
 };
 
 const SITE_CONFIG_PATH = path.join(process.cwd(), "config", "site.json");
 
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeHtmlSnippet(value: unknown) {
+  if (typeof value === "string") {
+    const html = value.trim();
+    return html || undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const lines = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trimEnd())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return undefined;
+  }
+
+  return lines.join("\n");
+}
+
+async function resolveCustomHeadHtml(
+  inlineValue: unknown,
+  fileValue: unknown,
+) {
+  const inlineHtml = normalizeHtmlSnippet(inlineValue);
+  const filePath = normalizeText(fileValue);
+  const parts: string[] = [];
+
+  if (filePath) {
+    const resolvedPath = path.isAbsolute(filePath)
+      ? filePath
+      : path.join(process.cwd(), filePath);
+
+    try {
+      const fileHtml = (await fs.readFile(resolvedPath, "utf8")).trim();
+
+      if (fileHtml) {
+        parts.push(fileHtml);
+      }
+    } catch {}
+  }
+
+  if (inlineHtml) {
+    parts.push(inlineHtml);
+  }
+
+  if (parts.length === 0) {
+    return undefined;
+  }
+
+  return parts.join("\n");
 }
 
 function normalizeLink(value: unknown): SiteLink | null {
@@ -105,11 +162,16 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     const raw = await fs.readFile(SITE_CONFIG_PATH, "utf8");
     const parsed = JSON.parse(raw) as Partial<SiteConfig> & {
       beian?: Partial<SiteBeian>;
+      customHeadHtmlFile?: string;
     };
 
     const title = normalizeText(parsed.title) || DEFAULT_SITE_CONFIG.title;
     const description =
       normalizeText(parsed.description) || DEFAULT_SITE_CONFIG.description;
+    const customHeadHtml = await resolveCustomHeadHtml(
+      parsed.customHeadHtml,
+      parsed.customHeadHtmlFile,
+    );
 
     return {
       title,
@@ -120,6 +182,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
         icp: normalizeRecord(parsed.beian?.icp),
         police: normalizeRecord(parsed.beian?.police),
       },
+      customHeadHtml,
     };
   } catch {
     return DEFAULT_SITE_CONFIG;

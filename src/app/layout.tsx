@@ -12,13 +12,22 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const siteConfig = await getSiteConfig();
+
   return (
     <html lang="zh" suppressHydrationWarning>
+      <head
+        dangerouslySetInnerHTML={
+          siteConfig.customHeadHtml
+            ? { __html: siteConfig.customHeadHtml }
+            : undefined
+        }
+      />
       <body className="antialiased">
         <ThemeProvider>
           {children}
