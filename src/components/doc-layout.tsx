@@ -6,6 +6,7 @@ import { DocContent } from "./doc-content";
 import { DocToc } from "./doc-toc";
 import { Sidebar } from "./sidebar";
 import { SidebarNode } from "@/lib/docs";
+import { startsWithMarkdownHeading } from "@/lib/markdown";
 
 interface DocItem {
   moduleId: string;
@@ -34,13 +35,14 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
   const moduleTitle = doc.moduleId.toUpperCase();
   const updatedAt = doc.frontmatter.updatedAt;
   const articleContainerId = "doc-article-content";
+  const showPageTitle = !startsWithMarkdownHeading(doc.contentRaw);
 
   return (
     <div className="flex w-full">
       <Sidebar items={sidebarItems} currentPath={currentPath} />
 
       <main className="flex-1 min-w-0">
-        <div className="max-w-[900px] mx-auto px-6 sm:px-8 lg:px-12 py-8 lg:py-10">
+        <div className="max-w-[1100px] mx-auto px-6 sm:px-8 lg:px-12 py-8 lg:py-10">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-5">
             <Link href={moduleRootPath} className="hover:text-[var(--accent-600)]">
@@ -55,9 +57,13 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
           {/* Title + Copy */}
           <div className="mb-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <h1 className="min-w-0 text-3xl sm:text-4xl font-bold text-[var(--text-primary)] leading-tight">
-                {title}
-              </h1>
+              {showPageTitle ? (
+                <h1 className="min-w-0 text-4xl sm:text-5xl font-bold text-[var(--text-primary)] leading-tight">
+                  {title}
+                </h1>
+              ) : (
+                <div />
+              )}
               <div className="shrink-0">
                 <CopyMarkdownUrlButton markdownContent={doc.contentRaw} />
               </div>
@@ -69,7 +75,7 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
 
           {/* Content */}
           <div id={articleContainerId}>
-            <DocContent content={doc.contentRaw} filePath={doc.filePath} />
+            <DocContent content={doc.contentRaw} filePath={doc.filePath} currentPath={currentPath} />
           </div>
 
           {/* Prev/Next Navigation */}

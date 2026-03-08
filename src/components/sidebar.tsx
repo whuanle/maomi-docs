@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SidebarNode } from "@/lib/docs";
 import { ChevronRight, Search } from "lucide-react";
 
@@ -10,26 +10,77 @@ interface SidebarProps {
   currentPath: string;
 }
 
+type ExpandedState = Record<string, boolean>;
+
+function hasActivePath(node: SidebarNode, currentPath: string): boolean {
+  if (node.urlPath === currentPath) {
+    return true;
+  }
+
+  return node.children?.some((child) => hasActivePath(child, currentPath)) ?? false;
+}
+
+function buildSidebarItemKey(item: SidebarNode, parentKey: string) {
+  return `${parentKey}/${item.name}`;
+}
+
+function collectExpandedState(
+  nodes: SidebarNode[],
+  currentPath: string,
+  parentKey: string,
+  level: number,
+  strategy: "default" | "active"
+): ExpandedState {
+  const expandedState: ExpandedState = {};
+
+  for (const node of nodes) {
+    if (node.type !== "group" || !node.children) {
+      continue;
+    }
+
+    const nodeKey = buildSidebarItemKey(node, parentKey);
+    const hasActiveChild = node.children.some((child) => hasActivePath(child, currentPath));
+
+    if (strategy === "default") {
+      expandedState[nodeKey] = level < 1 || hasActiveChild;
+    } else if (hasActiveChild) {
+      expandedState[nodeKey] = true;
+    }
+
+    Object.assign(
+      expandedState,
+      collectExpandedState(node.children, currentPath, nodeKey, level + 1, strategy)
+    );
+  }
+
+  return expandedState;
+}
+
 function SidebarItem({ 
   item, 
   currentPath, 
-  level = 0 
+  level = 0,
+  parentKey,
+  expandedState,
+  onToggle,
 }: { 
   item: SidebarNode; 
   currentPath: string; 
   level?: number;
+  parentKey: string;
+  expandedState: ExpandedState;
+  onToggle: (itemKey: string) => void;
 }) {
   const isActive = item.urlPath === currentPath;
-  const hasActiveChild = item.children?.some(child => 
-    child.urlPath === currentPath || child.children?.some(c => c.urlPath === currentPath)
-  );
-  const [isExpanded, setIsExpanded] = useState(hasActiveChild || level < 1);
+  const itemKey = buildSidebarItemKey(item, parentKey);
+  const hasActiveChild = item.children?.some((child) => hasActivePath(child, currentPath));
+  const isExpanded = expandedState[itemKey] ?? hasActiveChild ?? level < 1;
 
   if (item.type === "group" && item.children) {
     return (
       <li className="mt-1">
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => onToggle(itemKey)}
           className="w-full flex items-center justify-between px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors"
           style={{ paddingLeft: `${12 + level * 16}px` }}
         >
@@ -46,6 +97,9 @@ function SidebarItem({
                 item={child} 
                 currentPath={currentPath} 
                 level={level + 1}
+                parentKey={itemKey}
+                expandedState={expandedState}
+                onToggle={onToggle}
               />
             ))}
           </ul>
@@ -91,14 +145,96 @@ function filterNodes(nodes: SidebarNode[], keyword: string): SidebarNode[] {
 
 export function Sidebar({ items, currentPath }: SidebarProps) {
   const [query, setQuery] = useState("");
+  const [expandedState, setExpandedState] = useState<ExpandedState>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const filteredItems = useMemo(() => filterNodes(items, query), [items, query]);
 
   const pathSegments = currentPath.split("/").filter(Boolean);
   const moduleRootPath = pathSegments.length >= 2 ? `/${pathSegments[0]}/${pathSegments[1]}` : undefined;
+  const scrollStorageKey = `sidebar-scroll:${moduleRootPath ?? "default"}`;
+  const expandedStorageKey = `sidebar-expanded:${moduleRootPath ?? "default"}`;
+  const defaultExpandedState = useMemo(
+    () => collectExpandedState(items, currentPath, "root", 0, "default"),
+    [items, currentPath]
+  );
+  const activeExpandedState = useMemo(
+    () => collectExpandedState(items, currentPath, "root", 0, "active"),
+    [items, currentPath]
+  );
+
+  useEffect(() => {
+    let savedExpandedState: ExpandedState = {};
+
+    try {
+      const rawSavedExpandedState = window.sessionStorage.getItem(expandedStorageKey);
+      if (rawSavedExpandedState) {
+        savedExpandedState = JSON.parse(rawSavedExpandedState) as ExpandedState;
+      }
+    } catch {
+      savedExpandedState = {};
+    }
+
+    setExpandedState({
+      ...defaultExpandedState,
+      ...savedExpandedState,
+      ...activeExpandedState,
+    });
+  }, [expandedStorageKey, defaultExpandedState, activeExpandedState]);
+
+  const handleToggleGroup = (itemKey: string) => {
+    setExpandedState((previousState) => {
+      const nextState = {
+        ...previousState,
+        [itemKey]: !(previousState[itemKey] ?? false),
+      };
+
+      window.sessionStorage.setItem(expandedStorageKey, JSON.stringify(nextState));
+      return nextState;
+    });
+  };
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    const restoreScrollTop = () => {
+      const savedScrollTop = window.sessionStorage.getItem(scrollStorageKey);
+      if (!savedScrollTop) {
+        return;
+      }
+
+      const parsedScrollTop = Number(savedScrollTop);
+      if (!Number.isFinite(parsedScrollTop)) {
+        return;
+      }
+
+      scrollContainer.scrollTop = parsedScrollTop;
+    };
+
+    restoreScrollTop();
+    const animationFrameId = window.requestAnimationFrame(restoreScrollTop);
+
+    const handleScroll = () => {
+      window.sessionStorage.setItem(scrollStorageKey, String(scrollContainer.scrollTop));
+    };
+
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.sessionStorage.setItem(scrollStorageKey, String(scrollContainer.scrollTop));
+      scrollContainer.removeEventListener("scroll", handleScroll);
+    };
+  }, [scrollStorageKey]);
 
   return (
     <aside className="hidden lg:block w-[300px] shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-secondary)]">
-      <div className="sticky top-16 h-[calc(100vh-64px)] overflow-y-auto py-6">
+      <div
+        ref={scrollContainerRef}
+        className="sticky top-16 h-[calc(100vh-64px)] overflow-y-auto py-6"
+      >
         <div className="px-5">
           {moduleRootPath && (
             <Link
@@ -130,6 +266,9 @@ export function Sidebar({ items, currentPath }: SidebarProps) {
                   key={idx} 
                   item={item} 
                   currentPath={currentPath} 
+                  parentKey="root"
+                  expandedState={expandedState}
+                  onToggle={handleToggleGroup}
                 />
               ))}
             </ul>

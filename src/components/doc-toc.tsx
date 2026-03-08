@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 interface TocItem {
   id: string;
   text: string;
-  level: 2 | 3;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 interface DocTocProps {
@@ -23,7 +23,9 @@ export function DocToc({ containerId }: DocTocProps) {
       return;
     }
 
-    const headings = Array.from(root.querySelectorAll("h2, h3"));
+    const headings = Array.from(
+      root.querySelectorAll<HTMLHeadingElement>("h1, h2, h3, h4, h5, h6")
+    );
     const tocItems: TocItem[] = headings.map((heading, index) => {
       const text = heading.textContent?.trim() ?? "";
       let id = heading.id?.trim();
@@ -34,7 +36,7 @@ export function DocToc({ containerId }: DocTocProps) {
       return {
         id,
         text,
-        level: heading.tagName === "H2" ? 2 : 3,
+        level: Number(heading.tagName.replace("H", "")) as TocItem["level"],
       };
     });
 
@@ -58,7 +60,7 @@ export function DocToc({ containerId }: DocTocProps) {
   if (items.length === 0) return null;
 
   return (
-    <aside className="hidden xl:block w-[200px] shrink-0">
+    <aside className="hidden xl:block w-[300px] shrink-0">
       <div className="sticky top-20 py-4">
         <h3 className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide mb-3 px-3">
           本页目录
@@ -83,7 +85,7 @@ export function DocToc({ containerId }: DocTocProps) {
                     ? "text-[var(--accent-600)] font-medium"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 }`}
-                style={{ paddingLeft: item.level === 3 ? "24px" : "12px" }}
+                style={{ paddingLeft: `${12 + (item.level - 1) * 12}px` }}
               >
                 {item.text}
               </a>

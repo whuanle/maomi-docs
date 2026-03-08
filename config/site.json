@@ -27,11 +27,11 @@
   ],
   "beian": {
     "icp": {
-      "text": "京ICP备12345678号-1",
+      "text": "粤ICP备18051778号",
       "href": "https://beian.miit.gov.cn/"
     },
     "police": {
-      "text": "京公网安备11010502000001号",
+      "text": "粤公网安备 44030902003257号",
       "href": "http://www.beian.gov.cn/portal/registerSystemInfo"
     }
   }

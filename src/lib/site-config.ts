@@ -31,7 +31,16 @@ const DEFAULT_SITE_CONFIG: SiteConfig = {
   description: "探索技术文档和教程",
   headerLinks: [],
   footerLinks: [],
-  beian: {},
+  beian: {
+    icp: {
+      text: "粤ICP备18051778号",
+      href: "https://beian.miit.gov.cn/",
+    },
+    police: {
+      text: "粤公网安备 44030902003257号",
+      href: "http://www.beian.gov.cn/portal/registerSystemInfo",
+    },
+  },
 };
 
 const SITE_CONFIG_PATH = path.join(process.cwd(), "config", "site.json");

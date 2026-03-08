@@ -1,15 +1,22 @@
 "use client";
 
+import type { CSSProperties, ImgHTMLAttributes } from "react";
 import { useState } from "react";
 import { X } from "lucide-react";
 
-interface ZoomableImageProps {
+interface ZoomableImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> {
   src?: string;
-  alt?: string;
   basePath?: string;
 }
 
-export function ZoomableImage({ src, alt, basePath }: ZoomableImageProps) {
+export function ZoomableImage({
+  src,
+  alt,
+  basePath,
+  className,
+  style,
+  ...imgProps
+}: ZoomableImageProps) {
   const [isZoomed, setIsZoomed] = useState(false);
 
   if (!src) return null;
@@ -34,7 +41,9 @@ export function ZoomableImage({ src, alt, basePath }: ZoomableImageProps) {
       <img
         src={imageSrc}
         alt={alt || "图片"}
-        className="max-w-full rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"
+        className={className ?? "max-w-full rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"}
+        style={style as CSSProperties | undefined}
+        {...imgProps}
         onClick={() => setIsZoomed(true)}
       />
 

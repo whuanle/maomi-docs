@@ -25,8 +25,8 @@ export default async function DocPage({
     notFound();
   }
 
-  const currentPath = `/${locale}/${moduleId}/${slug.join("/")}`;
-  const currentIndex = content.docs.findIndex((d) => d.urlPath === currentPath);
+  const currentPath = doc.urlPath;
+  const currentIndex = content.docs.findIndex((d) => d.urlPath === doc.urlPath);
   const prev = currentIndex > 0 ? content.docs[currentIndex - 1] : null;
   const next = currentIndex < content.docs.length - 1 ? content.docs[currentIndex + 1] : null;
 
