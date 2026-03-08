@@ -21,7 +21,7 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
 
   return (
     <div className="relative group">
-      <pre className={className}>{children}</pre>
+      <pre tabIndex={0} className={className}>{children}</pre>
       <button
         type="button"
         onClick={handleCopy}
@@ -41,3 +41,4 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
     </div>
   );
 }
+

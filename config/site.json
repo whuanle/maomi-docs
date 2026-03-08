@@ -4,26 +4,24 @@
   "headerLinks": [
     {
       "label": "GitHub",
-      "href": "https://github.com",
+      "href": "https://github.com/whuanle",
+      "icon": "github",
+      "newTab": true
+    },
+    {
+      "label": "博客",
+      "href": "https://www.whuanle.cn",
+      "icon": "book-open",
+      "newTab": true
+    },
+    {
+      "label": "AnyAi",
+      "href": "https://anyai.wiki",
+      "icon": "sparkles",
       "newTab": true
     }
   ],
   "footerLinks": [
-    {
-      "label": "GitHub 仓库",
-      "href": "https://github.com",
-      "newTab": true
-    },
-    {
-      "label": "个人博客",
-      "href": "https://example.com/blog",
-      "newTab": true
-    },
-    {
-      "label": "官方网站",
-      "href": "https://example.com",
-      "newTab": true
-    }
   ],
   "beian": {
     "icp": {

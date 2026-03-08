@@ -4,6 +4,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 Header right-side links, footer links, and filing info are all read from `config/site.json`.
 
+Each item in `headerLinks` and `footerLinks` also supports an optional `icon` field. You can use a Lucide icon name like `github`, `book-open`, `globe`, or pass an image URL / public path such as `/icons/github.svg`.
+
 When deploying with Docker, mount the `config` directory and update `config/site.json` to change the page configuration without rebuilding the image.
 
 ## Getting Started

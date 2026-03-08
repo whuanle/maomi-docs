@@ -13,46 +13,47 @@ export function SiteFooter({ siteTitle, footerLinks, beian }: SiteFooterProps) {
 
   return (
     <footer className="border-t border-[var(--border-default)] bg-[var(--bg-secondary)]">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-[var(--text-muted)]">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <p className="text-base text-[var(--text-muted)]">
             © {currentYear} {siteTitle}. All rights reserved.
           </p>
 
           {footerLinks.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
               {footerLinks.map((link) => (
                 <SiteLinkItem
                   key={`${link.label}-${link.href}`}
                   link={link}
-                  className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-600)] transition-colors"
+                  className="inline-flex items-center rounded-full px-4 py-2 text-base text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent-600)] transition-colors"
+                  iconClassName="h-5 w-5 shrink-0 object-contain"
                 />
               ))}
             </div>
           )}
+
+          {hasBeian && (
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 border-t border-[var(--border-default)] pt-5 text-base text-[var(--text-muted)]">
+              {beian.icp && (beian.icp.href ? (
+                <SiteLinkItem
+                  link={{ label: beian.icp.text, href: beian.icp.href }}
+                  className="inline-flex items-center justify-center hover:text-[var(--accent-600)] transition-colors"
+                />
+              ) : (
+                <span>{beian.icp.text}</span>
+              ))}
+
+              {beian.police && (beian.police.href ? (
+                <SiteLinkItem
+                  link={{ label: beian.police.text, href: beian.police.href }}
+                  className="inline-flex items-center justify-center hover:text-[var(--accent-600)] transition-colors"
+                />
+              ) : (
+                <span>{beian.police.text}</span>
+              ))}
+            </div>
+          )}
         </div>
-
-        {hasBeian && (
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 border-t border-[var(--border-default)] pt-4 text-sm text-[var(--text-muted)]">
-            {beian.icp && (beian.icp.href ? (
-              <SiteLinkItem
-                link={{ label: beian.icp.text, href: beian.icp.href }}
-                className="hover:text-[var(--accent-600)] transition-colors"
-              />
-            ) : (
-              <span>{beian.icp.text}</span>
-            ))}
-
-            {beian.police && (beian.police.href ? (
-              <SiteLinkItem
-                link={{ label: beian.police.text, href: beian.police.href }}
-                className="hover:text-[var(--accent-600)] transition-colors"
-              />
-            ) : (
-              <span>{beian.police.text}</span>
-            ))}
-          </div>
-        )}
       </div>
     </footer>
   );

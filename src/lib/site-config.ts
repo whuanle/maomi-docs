@@ -5,6 +5,7 @@ import { unstable_noStore } from "next/cache";
 export interface SiteLink {
   label: string;
   href: string;
+  icon?: string;
   newTab?: boolean;
 }
 
@@ -57,6 +58,7 @@ function normalizeLink(value: unknown): SiteLink | null {
   const link = value as Partial<SiteLink>;
   const label = normalizeText(link.label);
   const href = normalizeText(link.href);
+  const icon = normalizeText(link.icon);
 
   if (!label || !href) {
     return null;
@@ -65,6 +67,7 @@ function normalizeLink(value: unknown): SiteLink | null {
   return {
     label,
     href,
+    icon: icon || undefined,
     newTab: typeof link.newTab === "boolean" ? link.newTab : undefined,
   };
 }

@@ -276,7 +276,7 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
           // 自定义 pre 标签（代码块容器）
           pre({ children }: ComponentPropsWithoutRef<"pre">) {
             return (
-              <pre className="bg-[var(--code-bg)] border border-[var(--code-border)] rounded-md p-4 my-4 overflow-x-auto">
+              <pre tabIndex={0} className="bg-[var(--code-bg)] border border-[var(--code-border)] rounded-md p-4 my-4 overflow-x-auto">
                 {children}
               </pre>
             );
@@ -339,3 +339,4 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
     </div>
   );
 }
+

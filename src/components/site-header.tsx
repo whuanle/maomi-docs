@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -43,13 +44,20 @@ export function SiteHeader({
           {/* Logo + 网站标题 - 可点击返回首页 */}
           <Link 
             href={homeHref} 
-            className="flex items-center gap-2.5 text-[var(--accent-600)] shrink-0 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2.5 shrink-0 hover:opacity-80 transition-opacity"
             title="返回首页"
           >
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-600)] text-white flex items-center justify-center font-bold">
-              文
-            </div>
-            <span className="font-semibold hidden sm:block">{siteTitle}</span>
+            <Image
+              src="/logo.png"
+              alt={`${siteTitle} logo`}
+              width={36}
+              height={36}
+              priority
+              className="h-9 w-9 rounded-lg object-contain"
+            />
+            <span className="font-semibold hidden sm:block text-[var(--text-primary)]">
+              {siteTitle}
+            </span>
           </Link>
 
           {/* 导航菜单 中间 - 去掉首页 */}
