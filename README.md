@@ -1,44 +1,180 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 猫咪文档
 
-## Site Config
+基于 Next.js 构建的文档站点，运行时直接读取 `config/site.json` 和 `docs/` 目录内容。
 
-Header right-side links, footer links, and filing info are all read from `config/site.json`.
+这意味着：
 
-Each item in `headerLinks` and `footerLinks` also supports an optional `icon` field. You can use a Lucide icon name like `github`, `book-open`, `globe`, or pass an image URL / public path such as `/icons/github.svg`.
+- 站点标题、页头链接、页脚链接、备案信息由 `config/site.json` 控制
+- 文档内容由 `docs/` 目录中的 Markdown/MDX 文件控制
+- 在 Docker 中挂载这两个路径后，可以按自己的内容定制站点
 
-When deploying with Docker, mount the `config` directory and update `config/site.json` to change the page configuration without rebuilding the image.
+## 本地开发
 
-## Getting Started
+安装依赖：
 
-First, run the development server:
+```bash
+npm install
+```
+
+启动开发环境：
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+构建生产版本：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm run start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 站点配置
 
-## Learn More
+站点配置文件位于 `config/site.json`。
 
-To learn more about Next.js, take a look at the following resources:
+当前支持的主要字段：
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `title`：站点标题
+- `description`：站点描述
+- `headerLinks`：顶部右侧链接
+- `footerLinks`：底部链接
+- `beian`：备案信息
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+其中 `headerLinks` 和 `footerLinks` 每一项都支持：
 
-## Deploy on Vercel
+- `label`：显示文字
+- `href`：跳转地址
+- `icon`：可选，支持 Lucide 图标名或图片路径，例如 `github`、`book-open`、`/icons/github.svg`
+- `newTab`：可选，是否在新标签页打开
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docker 使用
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+项目已提供根目录 `Dockerfile`，可直接构建镜像。
+
+### 1. 构建镜像
+
+```bash
+docker build -t maomi-doc:latest .
+```
+
+### 2. 使用镜像直接启动
+
+```bash
+docker run --rm -p 3000:3000 maomi-doc:latest
+```
+
+如果不做任何挂载，容器会使用镜像内部自带的 `config/` 和 `docs/` 内容。
+
+启动后访问：
+
+```text
+http://localhost:3000
+```
+
+## 自定义 `site.json` 映射
+
+容器内配置路径是：
+
+```text
+/app/config/site.json
+```
+
+如果你只想替换站点配置文件，可以把宿主机上的 `site.json` 挂载到这个位置。
+
+Linux / macOS：
+
+```bash
+docker run --rm -p 3000:3000 \
+  -v "$(pwd)/config/site.json:/app/config/site.json:ro" \
+  maomi-doc:latest
+```
+
+Windows PowerShell：
+
+```powershell
+docker run --rm -p 3000:3000 `
+  -v "${PWD}\config\site.json:/app/config/site.json:ro" `
+  maomi-doc:latest
+```
+
+如果你希望整个配置目录一起替换，也可以挂载整个 `config` 目录：
+
+```bash
+docker run --rm -p 3000:3000 \
+  -v "$(pwd)/config:/app/config:ro" \
+  maomi-doc:latest
+```
+
+## 自定义 `docs` 目录映射
+
+容器内文档目录路径是：
+
+```text
+/app/docs
+```
+
+如果你想让容器读取自己维护的文档目录，可以直接挂载宿主机 `docs`：
+
+Linux / macOS：
+
+```bash
+docker run --rm -p 3000:3000 \
+  -v "$(pwd)/docs:/app/docs:ro" \
+  maomi-doc:latest
+```
+
+Windows PowerShell：
+
+```powershell
+docker run --rm -p 3000:3000 `
+  -v "${PWD}\docs:/app/docs:ro" `
+  maomi-doc:latest
+```
+
+## 同时映射 `site.json` 和 `docs`
+
+这是最常见的使用方式：镜像固定，配置和文档由宿主机控制。
+
+Linux / macOS：
+
+```bash
+docker run --rm -p 3000:3000 \
+  -v "$(pwd)/config/site.json:/app/config/site.json:ro" \
+  -v "$(pwd)/docs:/app/docs:ro" \
+  maomi-doc:latest
+```
+
+Windows PowerShell：
+
+```powershell
+docker run --rm -p 3000:3000 `
+  -v "${PWD}\config\site.json:/app/config/site.json:ro" `
+  -v "${PWD}\docs:/app/docs:ro" `
+  maomi-doc:latest
+```
+
+## Docker 目录约定
+
+容器内最终使用的路径如下：
+
+```text
+/app
+├── config
+│   └── site.json
+├── docs
+├── public
+└── server.js
+```
+
+因此：
+
+- 想改站点标题、顶部/底部链接、备案信息：映射 `/app/config/site.json`
+- 想改文档内容：映射 `/app/docs`
+- 想一起完全自定义：同时映射两者
+
+## 说明
+
+- `Dockerfile` 使用 Next.js `standalone` 输出，运行镜像更轻量
+- 镜像默认监听 `3000` 端口
+- 示例中的 `:ro` 表示只读挂载，推荐保留
