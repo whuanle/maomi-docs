@@ -164,6 +164,7 @@ export function Sidebar({ items, currentPath }: SidebarProps) {
 
   useEffect(() => {
     let savedExpandedState: ExpandedState = {};
+    let animationFrameId = 0;
 
     try {
       const rawSavedExpandedState = window.sessionStorage.getItem(expandedStorageKey);
@@ -174,11 +175,17 @@ export function Sidebar({ items, currentPath }: SidebarProps) {
       savedExpandedState = {};
     }
 
-    setExpandedState({
-      ...defaultExpandedState,
-      ...savedExpandedState,
-      ...activeExpandedState,
+    animationFrameId = window.requestAnimationFrame(() => {
+      setExpandedState({
+        ...defaultExpandedState,
+        ...savedExpandedState,
+        ...activeExpandedState,
+      });
     });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
   }, [expandedStorageKey, defaultExpandedState, activeExpandedState]);
 
   const handleToggleGroup = (itemKey: string) => {

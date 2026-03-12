@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CustomHeadElements } from "@/components/custom-head-elements";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getSiteConfig } from "@/lib/site-config";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {

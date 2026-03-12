@@ -493,8 +493,9 @@ async function buildTreeRecursively(params: {
     };
 }
 
-export async function getModuleContent(moduleId: string, locale: string): Promise<ModuleContent | null> {
+export async function getModuleContent(moduleId: string, _locale: string): Promise<ModuleContent | null> {
     // 忽略 locale 参数，直接使用模块目录
+    void _locale;
     const moduleRoot = path.join(docsRoot, moduleId);
     const exists = await pathExists(moduleRoot);
 
@@ -576,14 +577,16 @@ export async function getNeighborDocs(locale: string, moduleId: string, slug: st
     };
 }
 
-export async function getHomeHero(locale: string) {
+export async function getHomeHero(_locale: string) {
+    void _locale;
     return {
         title: "文档中心",
         description: "探索技术文档和教程",
     };
 }
 
-export async function searchDocs(query: string, locale?: string, moduleId?: string): Promise<DocItem[]> {
+export async function searchDocs(query: string, _locale?: string, moduleId?: string): Promise<DocItem[]> {
+    void _locale;
     const normalized = query.trim().toLowerCase();
     if (!normalized) {
         return [];

@@ -17,44 +17,53 @@ export function DocToc({ containerId }: DocTocProps) {
   const [activeId, setActiveId] = useState<string>("");
 
   useEffect(() => {
-    const root = document.getElementById(containerId);
-    if (!root) {
-      setItems([]);
-      return;
-    }
+    let animationFrameId = 0;
+    let observer: IntersectionObserver | null = null;
 
-    const headings = Array.from(
-      root.querySelectorAll<HTMLHeadingElement>("h1, h2, h3, h4, h5, h6")
-    );
-    const tocItems: TocItem[] = headings.map((heading, index) => {
-      const text = heading.textContent?.trim() ?? "";
-      let id = heading.id?.trim();
-      if (!id) {
-        id = `heading-${index}`;
-        heading.id = id;
+    animationFrameId = window.requestAnimationFrame(() => {
+      const root = document.getElementById(containerId);
+      if (!root) {
+        setItems([]);
+        return;
       }
-      return {
-        id,
-        text,
-        level: Number(heading.tagName.replace("H", "")) as TocItem["level"],
-      };
+
+      const headings = Array.from(
+        root.querySelectorAll<HTMLHeadingElement>("h1, h2, h3, h4, h5, h6")
+      );
+      const tocItems: TocItem[] = headings.map((heading, index) => {
+        const text = heading.textContent?.trim() ?? "";
+        let id = heading.id?.trim();
+        if (!id) {
+          id = `heading-${index}`;
+          heading.id = id;
+        }
+        return {
+          id,
+          text,
+          level: Number(heading.tagName.replace("H", "")) as TocItem["level"],
+        };
+      });
+
+      setItems(tocItems);
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveId(entry.target.id);
+            }
+          });
+        },
+        { rootMargin: "-80px 0px -60% 0px" }
+      );
+
+      headings.forEach((h) => observer?.observe(h));
     });
 
-    setItems(tocItems);
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: "-80px 0px -60% 0px" }
-    );
-
-    headings.forEach((h) => observer.observe(h));
-    return () => observer.disconnect();
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      observer?.disconnect();
+    };
   }, [containerId]);
 
   if (items.length === 0) return null;

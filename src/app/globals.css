@@ -322,6 +322,55 @@ body {
   border-radius: var(--radius-md);
 }
 
+/* 数学公式 */
+.docs-prose .katex-display {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.docs-prose .katex {
+  font-size: 1.02em;
+}
+
+.docs-prose .mermaid-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.docs-prose .mermaid-diagram {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.docs-prose .mermaid-diagram :is(p, pre) {
+  margin-bottom: 0;
+}
+
+.docs-prose .mermaid-diagram .label,
+.docs-prose .mermaid-diagram .nodeLabel,
+.docs-prose .mermaid-diagram .edgeLabel {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.docs-prose .mermaid-diagram .edgeLabel rect {
+  fill-opacity: 0.92;
+}
+
+.docs-prose .mermaid-diagram .cluster rect,
+.docs-prose .mermaid-diagram .node rect,
+.docs-prose .mermaid-diagram .node polygon,
+.docs-prose .mermaid-diagram .node circle,
+.docs-prose .mermaid-diagram .node ellipse {
+  stroke-width: 1.2px;
+}
+
+.docs-prose .mermaid-diagram p {
+  margin-bottom: 0;
+}
+
 /* 按钮 */
 .docs-button {
   display: inline-flex;

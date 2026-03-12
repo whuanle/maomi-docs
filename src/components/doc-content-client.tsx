@@ -1,16 +1,19 @@
 "use client";
 
-import { type ComponentPropsWithoutRef, useEffect, useRef } from "react";
+import { Children, isValidElement, type ComponentPropsWithoutRef, useEffect, useRef } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
 import rehypeSlug from "rehype-slug";
 import rehypeRaw from "rehype-raw";
+import rehypeKatex from "rehype-katex";
 import Prism from "prismjs";
 import path from "path";
 import { stripFrontmatter } from "@/lib/markdown";
 import { ZoomableImage } from "./zoomable-image";
+import { MermaidDiagram } from "./mermaid-diagram";
 
 // 导入 PrismJS 语言支持
 import "prismjs/components/prism-bash";
@@ -270,11 +273,21 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
   return (
     <div ref={articleRef} className="docs-prose">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks, remarkPreserveBlankLines]}
-        rehypePlugins={[rehypeSlug, rehypeRaw]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath, remarkPreserveBlankLines]}
+        rehypePlugins={[rehypeSlug, rehypeRaw, rehypeKatex]}
         components={{
           // 自定义 pre 标签（代码块容器）
           pre({ children }: ComponentPropsWithoutRef<"pre">) {
+            const firstChild = Children.count(children) > 0 ? Children.toArray(children)[0] : null;
+
+            if (
+              isValidElement<{ className?: string }>(firstChild) &&
+              typeof firstChild.props.className === "string" &&
+              firstChild.props.className.includes("language-mermaid")
+            ) {
+              return <>{children}</>;
+            }
+
             return (
               <pre tabIndex={0} className="bg-[var(--code-bg)] border border-[var(--code-border)] rounded-md p-4 my-4 overflow-x-auto">
                 {children}
@@ -285,6 +298,11 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
           code({ className, children, ...props }: ComponentPropsWithoutRef<"code">) {
             const match = /language-(\w+)/.exec(className || "");
             const language = match ? match[1] : "";
+
+            if (language.toLowerCase() === "mermaid") {
+              const chart = String(children).trim();
+              return <MermaidDiagram chart={chart} />;
+            }
             
             // 如果是代码块（有 className），只返回 code 标签，因为 pre 已经由上面的组件处理了
             if (className) {

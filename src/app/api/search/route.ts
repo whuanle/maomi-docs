@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       module: string;
     }> = [];
 
-    for (const module of modules) {
-      const content = await getModuleContent(module.id, locale);
+    for (const moduleItem of modules) {
+      const content = await getModuleContent(moduleItem.id, locale);
       if (!content) continue;
 
       for (const doc of content.docs) {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           results.push({
             title,
             path: doc.urlPath,
-            module: module.title,
+            module: moduleItem.title,
           });
         }
       }
