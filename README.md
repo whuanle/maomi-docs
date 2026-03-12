@@ -96,6 +96,33 @@ npm run start
 
 项目已提供根目录 `Dockerfile`，可直接构建镜像。
 
+如果你需要一键构建并推送到 Docker Hub，可以直接使用根目录脚本：
+
+```bash
+./docker-publish.sh 0.0.3
+```
+
+默认镜像名是 `whuanle/maomi-docs`，脚本会依次执行：
+
+```text
+docker build -t whuanle/maomi-docs:latest .
+docker tag whuanle/maomi-docs:latest whuanle/maomi-docs:0.0.3
+docker push whuanle/maomi-docs:0.0.3
+docker push whuanle/maomi-docs:latest
+```
+
+如果以后要改镜像名，可以额外传入第二个参数：
+
+```bash
+./docker-publish.sh 0.0.3 yourname/maomi-docs
+```
+
+如果你当前只方便用 PowerShell，也可以继续使用：
+
+```powershell
+.\docker-publish.ps1 -Version 0.0.3
+```
+
 ### 1. 构建镜像
 
 ```bash
