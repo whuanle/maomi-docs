@@ -345,6 +345,11 @@ body {
   line-height: 1.5;
 }
 
+.docs-prose .mermaid-diagram svg,
+.mermaid-diagram-overlay svg {
+  min-width: min-content;
+}
+
 .docs-prose .mermaid-diagram :is(p, pre) {
   margin-bottom: 0;
 }
@@ -365,6 +370,14 @@ body {
 .docs-prose .mermaid-diagram .node circle,
 .docs-prose .mermaid-diagram .node ellipse {
   stroke-width: 1.2px;
+}
+
+.mermaid-diagram-overlay {
+  font-size: 1rem;
+}
+
+.mermaid-diagram-overlay svg {
+  max-width: none;
 }
 
 .docs-prose .mermaid-diagram p {
