@@ -30,6 +30,73 @@ npm run build
 npm run start
 ```
 
+## MCP 接入
+
+站点现在提供一个标准 JSON-RPC 风格的 MCP 搜索端点：
+
+```text
+POST /mcp
+```
+
+当前提供的工具：
+
+- `search_docs`：搜索文档内容，参数支持 `query`、`locale`、`limit`
+
+最小初始化请求示例：
+
+```bash
+curl http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"demo-client","version":"1.0.0"}}}'
+```
+
+列出工具：
+
+```bash
+curl http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+```
+
+调用搜索工具：
+
+```bash
+curl http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_docs","arguments":{"query":"kafka consumer","locale":"zh","limit":5}}}'
+```
+
+如果 MCP 客户端支持远程 HTTP MCP，可以将服务地址配置为：
+
+```text
+http://your-host/mcp
+```
+
+### MCP 安全与限流
+
+为了避免恶意流量和并发搜索把服务器拖垮，MCP 与搜索接口都加了服务端保护：
+
+- 按客户端 IP 固定窗口限流
+- 搜索任务全局并发上限
+- 搜索索引内存缓存，减少反复扫盘
+- 可选 Bearer Token 鉴权
+
+支持的环境变量：
+
+- `MCP_AUTH_TOKEN`：设置后，调用 `/mcp` 必须带 `Authorization: Bearer <token>`
+- `MCP_RATE_LIMIT_WINDOW_MS`：MCP 限流窗口，默认 `60000`
+- `MCP_RATE_LIMIT_MAX_REQUESTS`：每个 IP 在窗口内最大 MCP 请求数，默认 `30`
+- `SEARCH_RATE_LIMIT_WINDOW_MS`：普通搜索接口限流窗口，默认 `60000`
+- `SEARCH_RATE_LIMIT_MAX_REQUESTS`：每个 IP 在窗口内最大搜索请求数，默认 `90`
+- `SEARCH_MAX_CONCURRENT_REQUESTS`：搜索最大并发数，默认 `4`
+- `SEARCH_INDEX_TTL_MS`：搜索索引缓存时长，默认 `300000`
+
+如果你要对公网开放，最低要求是同时设置：
+
+- `MCP_AUTH_TOKEN`
+- 反向代理层限流
+- CDN 或 WAF
+
 ## 站点配置
 
 站点配置文件位于 `config/site.json`。

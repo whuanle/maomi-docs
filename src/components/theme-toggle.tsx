@@ -14,7 +14,9 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
+        data-header-tool="theme"
         className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+        title="主题切换"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="5" strokeWidth={1.5} />
@@ -27,9 +29,11 @@ export function ThemeToggle() {
 
   return (
     <button
+      data-header-tool="theme"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
       aria-label={isDark ? "切换到亮色主题" : "切换到暗色主题"}
+      title={isDark ? "切换到亮色主题" : "切换到暗色主题"}
     >
       {isDark ? (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -53,16 +53,18 @@ export function GlobalSearch({ locale }: { locale: string }) {
   }, [query, performSearch]);
 
   return (
-    <>
+    <div data-header-tool="search" className="relative shrink-0">
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-muted)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg border border-[var(--border-default)] transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-muted)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg border border-[var(--border-default)] transition-colors"
+        aria-label="打开搜索"
+        title="打开搜索"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <span>搜索</span>
+        <span className="hidden sm:inline">搜索</span>
         <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded text-[var(--text-muted)]">
           ⌘K
         </kbd>
@@ -117,6 +119,6 @@ export function GlobalSearch({ locale }: { locale: string }) {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

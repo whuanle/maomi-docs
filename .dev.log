@@ -1,0 +1,13 @@
+
+> maomi_doc@0.1.0 dev
+> next dev
+
+⚠ Found lockfile missing swc dependencies, patching...
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.50.171:3000
+
+✓ Starting...
+✓ Ready in 1039ms
+⚠ Lockfile was successfully patched, please run "npm install" to ensure @next/swc dependencies are downloaded
+[?25h

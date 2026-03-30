@@ -12,6 +12,21 @@ interface SidebarProps {
 
 type ExpandedState = Record<string, boolean>;
 
+const sidebarIndentClasses = [
+  "pl-3",
+  "pl-7",
+  "pl-11",
+  "pl-[60px]",
+  "pl-[76px]",
+  "pl-[92px]",
+  "pl-[108px]",
+  "pl-[124px]",
+] as const;
+
+function getSidebarIndentClass(level: number) {
+  return sidebarIndentClasses[Math.min(level, sidebarIndentClasses.length - 1)];
+}
+
 function hasActivePath(node: SidebarNode, currentPath: string): boolean {
   if (node.urlPath === currentPath) {
     return true;
@@ -75,14 +90,14 @@ function SidebarItem({
   const itemKey = buildSidebarItemKey(item, parentKey);
   const hasActiveChild = item.children?.some((child) => hasActivePath(child, currentPath));
   const isExpanded = expandedState[itemKey] ?? hasActiveChild ?? level < 1;
+  const indentClass = getSidebarIndentClass(level);
 
   if (item.type === "group" && item.children) {
     return (
       <li className="mt-1">
         <button
           onClick={() => onToggle(itemKey)}
-          className="w-full flex items-center justify-between px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors"
-          style={{ paddingLeft: `${12 + level * 16}px` }}
+          className={`w-full flex items-center justify-between ${indentClass} pr-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors`}
         >
           <span>{item.displayName}</span>
           <ChevronRight 
@@ -113,13 +128,12 @@ function SidebarItem({
       <li className="mt-0.5">
         <Link
           href={item.urlPath}
-          className={`block px-3 py-1.5 text-sm transition-colors ${
+          className={`block ${indentClass} pr-3 py-1.5 text-sm transition-colors ${
             isActive
               ? "text-[var(--accent-700)] font-medium"
               : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           }`}
           aria-current={isActive ? "page" : undefined}
-          style={{ paddingLeft: `${12 + level * 16}px` }}
         >
           {item.displayName}
         </Link>
@@ -240,7 +254,7 @@ export function Sidebar({ items, currentPath }: SidebarProps) {
     <aside className="hidden lg:block w-[300px] shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-secondary)]">
       <div
         ref={scrollContainerRef}
-        className="sticky top-16 h-[calc(100vh-64px)] overflow-y-auto py-6"
+        className="sticky top-[var(--site-header-height)] h-[calc(100vh-var(--site-header-height))] overflow-y-auto py-6"
       >
         <div className="px-5">
           {moduleRootPath && (

@@ -1,49 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listModules, getModuleContent } from "@/lib/docs";
+import { searchDocs } from "@/lib/search";
+import {
+  checkSearchRateLimit,
+  createRateLimitHeaders,
+  extractClientIp,
+  runSearchTask,
+  ServerBusyError,
+} from "@/lib/server-protection";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q")?.toLowerCase() || "";
+  const query = searchParams.get("q")?.trim() || "";
   const locale = searchParams.get("locale") || "zh";
+  const clientIp = extractClientIp(request.headers);
+  const rateLimit = checkSearchRateLimit(clientIp);
 
   if (!query) {
     return NextResponse.json({ results: [] });
   }
 
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { results: [], error: "rate_limited" },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(rateLimit),
+      },
+    );
+  }
+
   try {
-    const modules = await listModules();
-    const results: Array<{
-      title: string;
-      path: string;
-      module: string;
-    }> = [];
+    const results = await runSearchTask(() =>
+      searchDocs({
+        query,
+        locale,
+        limit: 20,
+      }),
+    );
 
-    for (const moduleItem of modules) {
-      const content = await getModuleContent(moduleItem.id, locale);
-      if (!content) continue;
-
-      for (const doc of content.docs) {
-        const title = doc.frontmatter.title || doc.displayName;
-        const docContent = doc.contentRaw.toLowerCase();
-
-        if (
-          title.toLowerCase().includes(query) ||
-          docContent.includes(query)
-        ) {
-          results.push({
-            title,
-            path: doc.urlPath,
-            module: moduleItem.title,
-          });
-        }
-      }
+    return NextResponse.json(
+      { results },
+      {
+        headers: createRateLimitHeaders(rateLimit),
+      },
+    );
+  } catch (error) {
+    if (error instanceof ServerBusyError) {
+      return NextResponse.json(
+        { results: [], error: "server_busy" },
+        {
+          status: 503,
+          headers: {
+            ...createRateLimitHeaders(rateLimit),
+            "Retry-After": "1",
+          },
+        },
+      );
     }
 
-    return NextResponse.json({ results: results.slice(0, 20) });
-  } catch (error) {
     console.error("搜索错误:", error);
-    return NextResponse.json({ results: [] }, { status: 500 });
+    return NextResponse.json(
+      { results: [] },
+      {
+        status: 500,
+        headers: createRateLimitHeaders(rateLimit),
+      },
+    );
   }
 }
