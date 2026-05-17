@@ -38,6 +38,25 @@ docker run --rm -p 3000:3000 `
 http://localhost:3000
 ```
 
+如果站点部署在 Nginx、Ingress、CDN 等反向代理后面，务必把原始协议和主机头透传给应用，否则页面里的图片请求可能会被防盗链误判为跨站请求，表现为“地址栏直接打开图片正常，但页面内 `<img>` 返回 403”。
+
+Nginx 示例：
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+如果你确实需要允许其它站点引用文档图片，可以额外设置环境变量 `ALLOWED_HOTLINK_ORIGINS`，多个来源用逗号分隔，例如：
+
+```bash
+ALLOWED_HOTLINK_ORIGINS=https://www.whuanle.cn,https://anyai.wiki
+```
+
 
 
 ## 使用方法

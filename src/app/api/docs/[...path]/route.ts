@@ -90,33 +90,107 @@ function parseAllowedHotlinkOrigins(value?: string) {
   );
 }
 
+function getFirstHeaderValue(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const [first] = value.split(",");
+  const normalized = first?.trim().toLowerCase();
+  return normalized || null;
+}
+
+function normalizeOrigin(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeHostFromUrl(value?: string | null) {
+  const origin = normalizeOrigin(value);
+  if (!origin) {
+    return null;
+  }
+
+  return new URL(origin).host.toLowerCase();
+}
+
+function collectAllowedHotlinkSources(request: NextRequest) {
+  const origins = new Set<string>();
+  const hosts = new Set<string>();
+
+  const addOrigin = (value?: string | null) => {
+    const origin = normalizeOrigin(value);
+    if (!origin) {
+      return;
+    }
+
+    origins.add(origin);
+    hosts.add(new URL(origin).host.toLowerCase());
+  };
+
+  addOrigin(request.nextUrl.origin);
+
+  for (const origin of ALLOWED_HOTLINK_ORIGINS) {
+    addOrigin(origin);
+  }
+
+  const siteHost =
+    getFirstHeaderValue(request.headers.get("x-forwarded-host")) ??
+    getFirstHeaderValue(request.headers.get("host")) ??
+    request.nextUrl.host.toLowerCase();
+
+  if (siteHost) {
+    hosts.add(siteHost);
+    // 兼容反向代理未透传协议时的 http/https 错位，避免同站请求被误判为盗链。
+    origins.add(`http://${siteHost}`);
+    origins.add(`https://${siteHost}`);
+  }
+
+  return { origins, hosts };
+}
+
+function isAllowedHotlinkSource(
+  value: string,
+  allowedSources: ReturnType<typeof collectAllowedHotlinkSources>,
+) {
+  const origin = normalizeOrigin(value);
+  if (!origin) {
+    return false;
+  }
+
+  if (allowedSources.origins.has(origin)) {
+    return true;
+  }
+
+  const host = normalizeHostFromUrl(value);
+  return host ? allowedSources.hosts.has(host) : false;
+}
+
 function validateHotlink(request: NextRequest, ext: string) {
   if (!CACHEABLE_ASSET_EXTENSIONS.has(ext)) {
     return "allowed";
   }
 
-  const siteOrigin = request.nextUrl.origin.toLowerCase();
-  const allowedOrigins = new Set([siteOrigin, ...ALLOWED_HOTLINK_ORIGINS]);
+  const allowedSources = collectAllowedHotlinkSources(request);
   const requestOrigin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   const secFetchSite = request.headers.get("sec-fetch-site");
 
   if (requestOrigin) {
-    try {
-      if (!allowedOrigins.has(new URL(requestOrigin).origin.toLowerCase())) {
-        return "forbidden";
-      }
-    } catch {
+    if (!isAllowedHotlinkSource(requestOrigin, allowedSources)) {
       return "forbidden";
     }
   }
 
   if (referer) {
-    try {
-      if (!allowedOrigins.has(new URL(referer).origin.toLowerCase())) {
-        return "forbidden";
-      }
-    } catch {
+    if (!isAllowedHotlinkSource(referer, allowedSources)) {
       return "forbidden";
     }
   }
