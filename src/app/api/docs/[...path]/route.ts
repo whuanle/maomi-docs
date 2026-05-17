@@ -113,17 +113,59 @@ function normalizeOrigin(value?: string | null) {
 }
 
 function normalizeHostFromUrl(value?: string | null) {
-  const origin = normalizeOrigin(value);
-  if (!origin) {
+  if (!value) {
     return null;
   }
 
-  return new URL(origin).host.toLowerCase();
+  try {
+    return new URL(value).host.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeHostnameFromUrl(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeHostHeader(value?: string | null) {
+  const normalized = getFirstHeaderValue(value);
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    return new URL(`http://${normalized}`).host.toLowerCase();
+  } catch {
+    return normalized;
+  }
+}
+
+function normalizeHostnameHeader(value?: string | null) {
+  const normalized = getFirstHeaderValue(value);
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    return new URL(`http://${normalized}`).hostname.toLowerCase();
+  } catch {
+    return normalized.replace(/:\d+$/, "");
+  }
 }
 
 function collectAllowedHotlinkSources(request: NextRequest) {
   const origins = new Set<string>();
   const hosts = new Set<string>();
+  const hostnames = new Set<string>();
 
   const addOrigin = (value?: string | null) => {
     const origin = normalizeOrigin(value);
@@ -132,7 +174,15 @@ function collectAllowedHotlinkSources(request: NextRequest) {
     }
 
     origins.add(origin);
-    hosts.add(new URL(origin).host.toLowerCase());
+    const host = normalizeHostFromUrl(origin);
+    if (host) {
+      hosts.add(host);
+    }
+
+    const hostname = normalizeHostnameFromUrl(origin);
+    if (hostname) {
+      hostnames.add(hostname);
+    }
   };
 
   addOrigin(request.nextUrl.origin);
@@ -142,9 +192,13 @@ function collectAllowedHotlinkSources(request: NextRequest) {
   }
 
   const siteHost =
-    getFirstHeaderValue(request.headers.get("x-forwarded-host")) ??
-    getFirstHeaderValue(request.headers.get("host")) ??
+    normalizeHostHeader(request.headers.get("x-forwarded-host")) ??
+    normalizeHostHeader(request.headers.get("host")) ??
     request.nextUrl.host.toLowerCase();
+  const siteHostname =
+    normalizeHostnameHeader(request.headers.get("x-forwarded-host")) ??
+    normalizeHostnameHeader(request.headers.get("host")) ??
+    request.nextUrl.hostname.toLowerCase();
 
   if (siteHost) {
     hosts.add(siteHost);
@@ -153,7 +207,13 @@ function collectAllowedHotlinkSources(request: NextRequest) {
     origins.add(`https://${siteHost}`);
   }
 
-  return { origins, hosts };
+  if (siteHostname) {
+    hostnames.add(siteHostname);
+    origins.add(`http://${siteHostname}`);
+    origins.add(`https://${siteHostname}`);
+  }
+
+  return { origins, hosts, hostnames };
 }
 
 function isAllowedHotlinkSource(
@@ -170,7 +230,12 @@ function isAllowedHotlinkSource(
   }
 
   const host = normalizeHostFromUrl(value);
-  return host ? allowedSources.hosts.has(host) : false;
+  if (host && allowedSources.hosts.has(host)) {
+    return true;
+  }
+
+  const hostname = normalizeHostnameFromUrl(value);
+  return hostname ? allowedSources.hostnames.has(hostname) : false;
 }
 
 function validateHotlink(request: NextRequest, ext: string) {
