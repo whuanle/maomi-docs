@@ -6,7 +6,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)]">
-      <HomepageMdxRenderer>{content}</HomepageMdxRenderer>
+      <HomepageMdxRenderer content={content} />
     </div>
   );
 }

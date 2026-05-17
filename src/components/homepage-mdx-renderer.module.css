@@ -1,266 +1,49 @@
 .root {
   margin: 0 auto;
   max-width: 1180px;
-  padding: calc(var(--site-header-height) + 20px) 16px 64px;
+  padding: calc(var(--site-header-height) + 10px) 16px 40px;
 }
 
 .content {
   color: var(--text-prose);
 }
 
-.content h1 {
-  margin: 0;
-  text-align: center;
-  font-size: clamp(2.8rem, 6vw, 4.4rem);
-  line-height: 1.06;
-  letter-spacing: -0.05em;
-  color: var(--text-primary);
+.content > :first-child {
+  margin-top: 0;
 }
 
-.content > p {
-  margin: 0.95rem auto 0;
-  max-width: 42rem;
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.8;
-  color: var(--text-secondary);
+.content > :last-child {
+  margin-bottom: 0;
 }
 
-.content h2 {
-  margin: 1.6rem 0 0.7rem;
-  padding-bottom: 0.55rem;
-  border-bottom: 1px solid #e6e9ef;
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #4b5563;
+.content :where(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
-.content h2:first-of-type {
-  margin-top: 1.45rem;
+.content :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
-.content table {
-  width: 100%;
-  margin: 0;
-  border-collapse: separate;
-  border-spacing: 0 12px;
-  table-layout: fixed;
+.content :where(pre) {
+  overflow-x: auto;
 }
 
-.content tbody,
-.content tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
+.content :where(code, pre, kbd, samp) {
+  font-family: "SF Mono", Monaco, "Cascadia Code", Consolas, monospace;
 }
 
-.content td {
-  position: relative;
-  overflow: hidden;
-  width: 50%;
-  vertical-align: top;
-  padding: 18px 20px;
-  border: 1px solid #e3e7ee;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-  transition:
-    transform 0.22s ease,
-    border-color 0.22s ease,
-    box-shadow 0.22s ease;
-}
-
-.content td::before {
-  content: none;
-}
-
-.content td:hover {
-  transform: translateY(-1px);
-  border-color: #d7dde8;
-  box-shadow: 0 8px 22px -20px rgba(15, 23, 42, 0.16);
-}
-
-.content td:empty {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.content td > :is(a, strong) {
-  display: inline-block;
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 680;
-  line-height: 1.25;
-  letter-spacing: -0.025em;
-  color: var(--text-primary);
-  text-decoration: none;
-}
-
-.content td:hover > a {
+.content :where(a) {
   color: var(--accent-700);
-}
-
-.content td p {
-  margin: 8px 0 0;
-  font-size: 0.95rem;
-  line-height: 1.72;
-  color: var(--text-secondary);
-}
-
-.content td p + p {
-  margin-top: 6px;
-}
-
-.content td img {
-  display: block;
-  width: min(100%, 238px);
-  height: auto;
-  margin: 14px auto 0;
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: none;
-}
-
-.content > table:first-of-type + h2 {
-  margin-top: 1.35rem;
-}
-
-.splitLayout .content {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.82fr);
-  column-gap: 28px;
-  row-gap: 10px;
-  align-items: start;
-}
-
-.splitLayout .content > h1,
-.splitLayout .content > p {
-  grid-column: 1 / -1;
-}
-
-.splitLayout .content > h1 {
-  grid-row: 1;
-}
-
-.splitLayout .content > p {
-  grid-row: 2;
-  margin-bottom: 2px;
-}
-
-.splitLayout .content > h2:first-of-type {
-  grid-column: 2;
-  grid-row: 3;
-  margin-top: 0.9rem;
-}
-
-.splitLayout .content > table:first-of-type {
-  grid-column: 2;
-  grid-row: 4;
-  border-spacing: 0;
-}
-
-.splitLayout .content > h2:last-of-type {
-  grid-column: 1;
-  grid-row: 3;
-  margin-top: 0.9rem;
-}
-
-.splitLayout .content > table:last-of-type {
-  grid-column: 1;
-  grid-row: 4;
-  border-spacing: 0;
-}
-
-.splitLayout .content > table:first-of-type tbody,
-.splitLayout .content > table:last-of-type tbody {
-  display: grid;
-  width: 100%;
-  gap: 14px;
-}
-
-.splitLayout .content > table:first-of-type tr,
-.splitLayout .content > table:last-of-type tr {
-  display: contents;
-}
-
-.splitLayout .content > table:first-of-type td,
-.splitLayout .content > table:last-of-type td {
-  display: block;
-  width: auto;
-}
-
-.splitLayout .content > table:first-of-type td {
-  padding: 20px 22px;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-}
-
-.splitLayout .content > table:first-of-type td > strong {
-  font-size: 1.12rem;
-}
-
-.splitLayout .content > table:first-of-type td p {
-  font-size: 0.98rem;
-  line-height: 1.82;
-}
-
-.splitLayout .content > table:first-of-type td img {
-  width: 100%;
-  max-width: none;
-  margin-top: 14px;
-  border-radius: 6px;
-}
-
-.splitLayout .content > table:last-of-type td {
-  padding: 18px 20px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-}
-
-.splitLayout .content > table:last-of-type td::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: auto;
-  bottom: auto;
-  left: 0;
-  width: 4px;
-  height: auto;
-  min-height: 100%;
-  border-radius: 0;
-  background: #2f8cff;
-  opacity: 1;
-}
-
-.splitLayout .content > table:last-of-type td > a {
-  font-size: 1.22rem;
-}
-
-.splitLayout .content > table:last-of-type td p {
-  margin-top: 6px;
-  font-size: 0.97rem;
-  line-height: 1.72;
-}
-
-.splitLayout .content > table:last-of-type td:hover {
-  transform: translateX(3px);
-  border-color: #d7dde8;
-}
-
-.splitLayout .content td:empty {
-  display: none;
 }
 
 @media (min-width: 640px) {
   .root {
     padding-right: 24px;
-    padding-bottom: 80px;
+    padding-bottom: 48px;
     padding-left: 24px;
   }
 }
@@ -272,46 +55,10 @@
   }
 }
 
-@media (max-width: 860px) {
-  .splitLayout .content {
-    display: block;
-  }
-
-  .content table,
-  .content tbody,
-  .content tr,
-  .content td {
-    display: block;
-    width: 100%;
-  }
-
-  .content td {
-    padding: 18px 18px;
-    border-radius: 16px;
-  }
-
-  .content td + td,
-  .content tr + tr td:first-child {
-    margin-top: 12px;
-  }
-
-  .splitLayout .content > table:first-of-type,
-  .splitLayout .content > table:last-of-type {
-    border-spacing: 0 12px;
-  }
-
-  .splitLayout .content > table:first-of-type tbody,
-  .splitLayout .content > table:last-of-type tbody {
-    display: block;
-    gap: 0;
-  }
-
-  .splitLayout .content > table:first-of-type tr,
-  .splitLayout .content > table:last-of-type tr {
-    display: block;
-  }
-
-  .splitLayout .content > table:last-of-type td:hover {
-    transform: translateY(-2px);
+@media (max-width: 640px) {
+  .root {
+    padding-top: calc(var(--site-header-height) + 6px);
+    padding-right: 16px;
+    padding-left: 16px;
   }
 }

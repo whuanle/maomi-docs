@@ -1,12 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import matter from "gray-matter";
 import { unstable_noStore } from "next/cache";
-import { compileMDX } from "next-mdx-remote/rsc";
-import { homepageMdxComponents } from "@/components/homepage-mdx-components";
-import rehypeKatex from "rehype-katex";
-import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
 const CONFIG_HOMEPAGE_MDX_PATH = path.join(process.cwd(), "config", "index.mdx");
 const BUILTIN_HOMEPAGE_MDX_PATH = path.join(process.cwd(), "src", "content", "default-homepage.mdx");
 
@@ -38,18 +33,9 @@ export async function loadHomePageMdx() {
   unstable_noStore();
 
   const source = await resolveHomePageSource();
-
-  const { content, frontmatter } = await compileMDX<HomePageFrontmatter>({
-    source,
-    components: homepageMdxComponents,
-    options: {
-      parseFrontmatter: true,
-      mdxOptions: {
-        remarkPlugins: [remarkGfm, remarkBreaks, remarkMath],
-        rehypePlugins: [rehypeKatex],
-      },
-    },
-  });
+  const parsed = matter(source);
+  const frontmatter = parsed.data as HomePageFrontmatter;
+  const content = parsed.content;
 
   return {
     content,
