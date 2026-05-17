@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { unstable_noStore } from "next/cache";
 import { compileMDX } from "next-mdx-remote/rsc";
+import { homepageMdxComponents } from "@/components/homepage-mdx-components";
 import rehypeKatex from "rehype-katex";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -40,6 +41,7 @@ export async function loadHomePageMdx() {
 
   const { content, frontmatter } = await compileMDX<HomePageFrontmatter>({
     source,
+    components: homepageMdxComponents,
     options: {
       parseFrontmatter: true,
       mdxOptions: {

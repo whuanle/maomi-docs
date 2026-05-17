@@ -1,90 +1,105 @@
 ---
 title: 猫咪文档
-description: 文档模块导航
+description: 技术教程与专题专栏
 ---
 
-# 猫咪技术学习站
+<HomePage>
+  <Hero
+    kicker="个人技术博客 · 系统化教程整理"
+    title="猫咪技术学习站"
+  >
+    <p>围绕微服务、云原生、C#、Go、Python 与 AI，持续整理成适合长期阅读、反复查阅的技术教程与专题专栏。</p>
+    <TagList label="关注方向">
+      <Tag>微服务架构</Tag>
+      <Tag>Kubernetes</Tag>
+      <Tag>Istio</Tag>
+      <Tag>C# / .NET</Tag>
+      <Tag>Go</Tag>
+      <Tag>Python</Tag>
+      <Tag>AI 应用</Tag>
+    </TagList>
+  </Hero>
 
-一系列系统化的知识教程，让你轻松学习，提升自己！
+  <Section
+    eyebrow="About"
+    title="站长介绍"
+    description="这里记录长期学习、项目实践和专题整理，也保留一点个人博客该有的温度。"
+  >
+    <Columns>
+      <Card
+        eyebrow="Author"
+        title="痴者工良"
+        subtitle="高级程序员劝退师"
+      >
+        <p>有趣的博主，小小程序员，业余摄影师，主要研究微服务架构、人工智能、Kubernetes、Istio、DevOps、AI 等，主要语言是 C#、Go、Python。日常喜欢看书、写博客、摄影、运动、看风景。</p>
+        <ul>
+          <li>关注方向：微服务架构、云原生、人工智能与工程实践。</li>
+          <li>常用语言：C#、Go、Python。</li>
+          <li>内容特点：从原理到示例，再到真实开发中的落地方式。</li>
+        </ul>
+      </Card>
 
-## 站长介绍
-
-<table>
-  <tbody>
-    <tr>
-      <td>
-        <strong>痴者工良</strong>
-        <p>高级程序员劝退师</p>
-        <p>
-          有趣的博主，小小程序员，业余摄影师，主要研究微服务架构、人工智能、kubernetes、
-          istio、Devops、AI 等，主要语言是 C#、Go、Python。日常喜欢看书、写博客、摄影、运动、看风景。
-        </p>
-      </td>
-      <td>
-        <strong>公众号</strong>
-        <p>欢迎关注站长公众号，获取更多技术文章与更新。</p>
+      <Card
+        as="aside"
+        eyebrow="WeChat"
+        title="公众号"
+      >
+        <p>欢迎关注站长公众号，获取更多技术文章、专题更新与实践整理。</p>
         <img
           src="https://www.whuanle.cn/wp-content/uploads/2021/04/16181029121.png"
-          alt="痴者工良公众号"
+          alt="痴者工良公众号二维码"
+          loading="lazy"
         />
-      </td>
-    </tr>
-  </tbody>
-</table>
+        <small>微信扫一扫，第一时间获取更新。</small>
+      </Card>
+    </Columns>
+  </Section>
 
-## 文档模块
-
-<table>
-  <tbody>
-    <tr>
-      <td>
-        <a href="/zh/istio">Istio</a>
+  <Section
+    eyebrow="Columns"
+    title="文档专栏"
+    description="按专题持续整理，从基础概念到实践示例，适合作为长期学习和查阅的技术资料。"
+  >
+    <CardGrid>
+      <LinkCard href="/zh/istio" eyebrow="服务网格 · 01" title="Istio">
         <p>开源服务网格平台，覆盖流量治理、安全控制与可观测性等核心能力。</p>
-      </td>
-      <td>
-        <a href="/zh/kubernetes">Kubernetes</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/kubernetes" eyebrow="云原生 · 02" title="Kubernetes">
         <p>容器编排基础设施，帮助团队完成应用的部署、扩缩容与集群管理。</p>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/zh/maomi_framework">Maomi 开发框架</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/maomi_framework" eyebrow="框架设计 · 03" title="Maomi 开发框架">
         <p>简洁易读的框架实践，既能用于开发，也适合作为架构设计的参考样例。</p>
-      </td>
-      <td>
-        <a href="/zh/maomi_mq">Maomi.MQ</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/maomi_mq" eyebrow="消息系统 · 04" title="Maomi.MQ">
         <p>面向消息队列的客户端组件，聚焦可靠传输、路由能力与高可用通信。</p>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/zh/learnkafka">Kafka</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/learnkafka" eyebrow="消息流处理 · 05" title="Kafka">
         <p>从示例和原理入手的 Kafka 学习资料，适合快速建立完整认知。</p>
-      </td>
-      <td>
-        <a href="/zh/threads">C# 多线程</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/threads" eyebrow="并发编程 · 06" title="C# 多线程">
         <p>围绕线程管理、并发模型与同步机制展开的 C# 实战整理。</p>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/zh/csharp_reflect">C# 反射</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/csharp_reflect" eyebrow="运行时能力 · 07" title="C# 反射">
         <p>以示例方式解释反射机制、动态类型处理与运行时能力的使用场景。</p>
-      </td>
-      <td>
-        <a href="/zh/cs_expression">C# 表达式树</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/cs_expression" eyebrow="动态编程 · 08" title="C# 表达式树">
         <p>聚焦表达式树构建、动态代码生成与典型业务落地方式。</p>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/zh/cs_pytorch">C# 深度学习</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/cs_pytorch" eyebrow="AI 工程 · 09" title="C# 深度学习">
         <p>使用 C# 与 TorchSharp 入门深度学习，覆盖网络结构与视觉基础实践。</p>
-      </td>
-      <td>
-        <a href="/zh/maomiagent">MaomiAgent</a>
+      </LinkCard>
+
+      <LinkCard href="/zh/maomiagent" eyebrow="智能助手 · 10" title="MaomiAgent">
         <p>个人桌面智能助手，集成 AI 对话、工作区、模型、智能体、技能与任务管理能力。</p>
-      </td>
-    </tr>
-  </tbody>
-</table>
+      </LinkCard>
+    </CardGrid>
+  </Section>
+</HomePage>
