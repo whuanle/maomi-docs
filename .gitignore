@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+.npm-cache/*
+.playwright-daemon/*
+demo_runtime/8
 
 # production
 /build

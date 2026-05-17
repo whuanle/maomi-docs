@@ -1,0 +1,35 @@
+---
+title: MaomiDocs
+description: MaomiDocs 默认首页
+---
+
+# MaomiDocs
+
+一个基于 Next.js 构建的文档站点，支持通过外部目录挂载站点配置、首页内容与文档数据。
+
+## 项目说明
+
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <strong>外置首页</strong>
+        <p>当 `config/index.mdx` 存在时，首页会直接渲染这份外部文档。</p>
+      </td>
+      <td>
+        <strong>内置兜底</strong>
+        <p>没有提供外部首页时，站点会自动回退到这一份内置首页。</p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>文档来源</strong>
+        <p>文档模块和页面内容来自 `docs/` 目录，适合长期维护和持续更新。</p>
+      </td>
+      <td>
+        <strong>部署方式</strong>
+        <p>适合 Docker、自托管和只读挂载场景，方便把内容与程序完全分离。</p>
+      </td>
+    </tr>
+  </tbody>
+</table>

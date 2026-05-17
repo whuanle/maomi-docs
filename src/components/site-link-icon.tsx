@@ -1,8 +1,22 @@
 "use client";
 
-import { DynamicIcon, iconNames, type IconName } from "lucide-react/dynamic";
+import {
+  BookOpen,
+  ExternalLink,
+  Github,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 
-const lucideIconNameSet = new Set<string>(iconNames);
+const builtinIcons: Record<string, LucideIcon> = {
+  github: Github,
+  githubicon: Github,
+  "book-open": BookOpen,
+  bookopen: BookOpen,
+  sparkles: Sparkles,
+  externallink: ExternalLink,
+  "external-link": ExternalLink,
+};
 
 function isImageIcon(icon: string) {
   return (
@@ -14,7 +28,7 @@ function isImageIcon(icon: string) {
   );
 }
 
-function normalizeLucideIconName(icon: string): IconName | null {
+function normalizeLucideIconName(icon: string): string | null {
   const trimmed = icon.trim();
 
   if (!trimmed) {
@@ -30,8 +44,8 @@ function normalizeLucideIconName(icon: string): IconName | null {
   const candidates = [trimmed, trimmed.toLowerCase(), compactLower, kebabLower];
 
   for (const candidate of candidates) {
-    if (lucideIconNameSet.has(candidate)) {
-      return candidate as IconName;
+    if (builtinIcons[candidate]) {
+      return candidate;
     }
   }
 
@@ -55,10 +69,11 @@ export function SiteLinkIcon({ icon, className }: SiteLinkIconProps) {
   }
 
   const iconName = normalizeLucideIconName(icon);
+  const IconComponent = iconName ? builtinIcons[iconName] : null;
 
-  if (!iconName) {
+  if (!IconComponent) {
     return null;
   }
 
-  return <DynamicIcon name={iconName} className={className} aria-hidden="true" />;
+  return <IconComponent className={className} aria-hidden="true" />;
 }

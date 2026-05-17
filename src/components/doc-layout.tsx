@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { CopyMarkdownUrlButton } from "./copy-markdown-url-button";
 import { DocContent } from "./doc-content";
 import { DocToc } from "./doc-toc";
 import { Sidebar } from "./sidebar";
@@ -36,6 +35,7 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
   const updatedAt = doc.frontmatter.updatedAt;
   const articleContainerId = "doc-article-content";
   const showPageTitle = !startsWithMarkdownHeading(doc.contentRaw);
+  const hasTitleSection = showPageTitle || Boolean(updatedAt);
 
   return (
     <div className="flex w-full">
@@ -54,24 +54,19 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
             <span className="text-[var(--text-primary)]">{title}</span>
           </nav>
 
-          {/* Title + Copy */}
-          <div className="mb-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          {/* Title */}
+          {hasTitleSection ? (
+            <div className="mb-6">
               {showPageTitle ? (
                 <h1 className="min-w-0 text-4xl sm:text-5xl font-bold text-[var(--text-primary)] leading-tight">
                   {title}
                 </h1>
-              ) : (
-                <div />
+              ) : null}
+              {updatedAt && (
+                <div className="mt-2 text-xs text-[var(--text-muted)]">更新于 {updatedAt}</div>
               )}
-              <div className="shrink-0">
-                <CopyMarkdownUrlButton markdownContent={doc.contentRaw} />
-              </div>
             </div>
-            {updatedAt && (
-              <div className="mt-2 text-xs text-[var(--text-muted)]">更新于 {updatedAt}</div>
-            )}
-          </div>
+          ) : null}
 
           {/* Content */}
           <div id={articleContainerId}>
@@ -123,7 +118,7 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
         </div>
       </main>
 
-      <DocToc containerId={articleContainerId} />
+      <DocToc containerId={articleContainerId} markdownContent={doc.contentRaw} />
     </div>
   );
 }
