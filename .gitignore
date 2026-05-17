@@ -19,6 +19,8 @@
 .npm-cache/*
 .playwright-daemon/*
 demo_runtime/8
+output/
+.playwright-cli/
 
 # production
 /build
