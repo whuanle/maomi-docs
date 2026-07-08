@@ -3,6 +3,8 @@ const DEFAULT_MCP_RATE_LIMIT_MAX_REQUESTS = 30;
 const DEFAULT_SEARCH_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_SEARCH_RATE_LIMIT_MAX_REQUESTS = 90;
 const DEFAULT_SEARCH_MAX_CONCURRENT = 4;
+const DEFAULT_STATS_RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_STATS_RATE_LIMIT_MAX_REQUESTS = 120;
 
 type RateLimitSnapshot = {
   allowed: boolean;
@@ -92,6 +94,10 @@ const searchRateLimiter = new FixedWindowRateLimiter(
 const searchConcurrencyGuard = new ConcurrencyGuard(
   getEnvNumber("SEARCH_MAX_CONCURRENT_REQUESTS", DEFAULT_SEARCH_MAX_CONCURRENT),
 );
+const statsRateLimiter = new FixedWindowRateLimiter(
+  getEnvNumber("STATS_RATE_LIMIT_WINDOW_MS", DEFAULT_STATS_RATE_LIMIT_WINDOW_MS),
+  getEnvNumber("STATS_RATE_LIMIT_MAX_REQUESTS", DEFAULT_STATS_RATE_LIMIT_MAX_REQUESTS),
+);
 
 export function checkMcpRateLimit(clientIp: string) {
   return mcpRateLimiter.check(`mcp:${clientIp}`);
@@ -99,6 +105,10 @@ export function checkMcpRateLimit(clientIp: string) {
 
 export function checkSearchRateLimit(clientIp: string) {
   return searchRateLimiter.check(`search:${clientIp}`);
+}
+
+export function checkStatsRateLimit(clientIp: string) {
+  return statsRateLimiter.check(`stats:${clientIp}`);
 }
 
 export async function runSearchTask<T>(task: () => Promise<T>) {

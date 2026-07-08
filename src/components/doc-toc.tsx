@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CopyMarkdownUrlButton } from "./copy-markdown-url-button";
+import { ArticleStats } from "./article-stats";
 
 interface TocItem {
   id: string;
@@ -9,9 +10,16 @@ interface TocItem {
   level: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
+interface ArticleStatsSnapshot {
+  view: number;
+  like: number;
+}
+
 interface DocTocProps {
   containerId: string;
   markdownContent?: string;
+  docPath?: string;
+  articleStats?: ArticleStatsSnapshot;
 }
 
 const DEFAULT_HEADER_OFFSET = 65;
@@ -26,7 +34,7 @@ function getHeaderOffset() {
   return Number.isFinite(parsedValue) ? parsedValue : DEFAULT_HEADER_OFFSET;
 }
 
-export function DocToc({ containerId, markdownContent }: DocTocProps) {
+export function DocToc({ containerId, markdownContent, docPath, articleStats }: DocTocProps) {
   const [items, setItems] = useState<TocItem[]>([]);
   const [activeId, setActiveId] = useState<string>("");
 
@@ -84,7 +92,7 @@ export function DocToc({ containerId, markdownContent }: DocTocProps) {
 
   const hasTocItems = items.length > 0;
 
-  if (!hasTocItems && !markdownContent) return null;
+  if (!hasTocItems && !markdownContent && !articleStats) return null;
 
   return (
     <aside className="hidden xl:block w-[300px] shrink-0">
@@ -92,6 +100,17 @@ export function DocToc({ containerId, markdownContent }: DocTocProps) {
         {markdownContent ? (
           <div className="mb-5 px-3">
             <CopyMarkdownUrlButton markdownContent={markdownContent} />
+          </div>
+        ) : null}
+
+        {articleStats && docPath ? (
+          <div className="mb-5">
+            <ArticleStats
+              variant="card"
+              docPath={docPath}
+              initialViews={articleStats.view}
+              initialLikes={articleStats.like}
+            />
           </div>
         ) : null}
 

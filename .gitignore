@@ -47,3 +47,6 @@ next-env.d.ts
 
 # docs directory for docker volume mapping
 /docs/
+
+# runtime stats (read counts / likes) written to docs/.stats
+/docs/.stats/

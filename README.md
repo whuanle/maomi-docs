@@ -10,12 +10,14 @@
 
 最常见的部署方式是同时挂载 `site.json` 和 `docs`。这样镜像可以保持固定，配置和文档由宿主机管理，无需因为文档更新而重新构建镜像。
 
+> 注意：`docs` 目录需要以**可写**方式挂载（不要加 `:ro`），否则阅读量、点赞等统计数据无法写入 `docs/.stats/`。
+
 Linux / macOS：
 
 ```bash
 docker run --rm -p 3000:3000 \
   -v "$(pwd)/config:/app/config" \
-  -v "$(pwd)/docs:/app/docs:ro" \
+  -v "$(pwd)/docs:/app/docs" \
   whuanle/maomi-docs:latest
 ```
 
@@ -26,7 +28,7 @@ Windows PowerShell：
 ```powershell
 docker run --rm -p 3000:3000 `
   -v "${PWD}\config:/app/config" `
-  -v "${PWD}\docs:/app/docs:ro" `
+  -v "${PWD}\docs:/app/docs" `
   whuanle/maomi-docs:latest
 ```
 

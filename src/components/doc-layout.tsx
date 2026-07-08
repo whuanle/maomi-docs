@@ -20,15 +20,21 @@ interface DocItem {
   filePath?: string;
 }
 
+interface ArticleStatsSnapshot {
+  view: number;
+  like: number;
+}
+
 interface DocLayoutProps {
   currentPath: string;
   sidebarItems: SidebarNode[];
   doc: DocItem;
   prev?: DocItem | null;
   next?: DocItem | null;
+  articleStats?: ArticleStatsSnapshot;
 }
 
-export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLayoutProps) {
+export function DocLayout({ currentPath, sidebarItems, doc, prev, next, articleStats }: DocLayoutProps) {
   const title = doc.frontmatter.title ?? doc.displayName;
   const moduleRootPath = `/${doc.locale}/${doc.moduleId}`;
   const moduleTitle = doc.moduleId.toUpperCase();
@@ -118,7 +124,12 @@ export function DocLayout({ currentPath, sidebarItems, doc, prev, next }: DocLay
         </div>
       </main>
 
-      <DocToc containerId={articleContainerId} markdownContent={doc.contentRaw} />
+      <DocToc
+        containerId={articleContainerId}
+        markdownContent={doc.contentRaw}
+        docPath={doc.urlPath}
+        articleStats={articleStats}
+      />
     </div>
   );
 }

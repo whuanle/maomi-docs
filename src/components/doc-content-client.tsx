@@ -2,7 +2,7 @@
 
 import { Children, isValidElement, type ComponentPropsWithoutRef, useEffect, useRef } from "react";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import remarkMath from "remark-math";
@@ -14,6 +14,8 @@ import path from "path";
 import { stripFrontmatter } from "@/lib/markdown";
 import { ZoomableImage } from "./zoomable-image";
 import { MermaidDiagram } from "./mermaid-diagram";
+import { CodeTabs } from "./doc-tabs";
+import { remarkCodeTabs } from "@/lib/remark-code-tabs";
 
 // 导入 PrismJS 语言支持
 import "prismjs/components/prism-bash";
@@ -270,87 +272,100 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
     return () => clearTimeout(timer);
   }, [processedContent]);
 
+  const markdownComponents = {
+    // div 拦截：把 remark-code-tabs 产出的 <div class="codetabs"> 交给 CodeTabs 渲染
+    div({ className, children, ...props }: ComponentPropsWithoutRef<"div">) {
+      if (typeof className === "string" && className.includes("codetabs")) {
+        return <CodeTabs>{children}</CodeTabs>;
+      }
+      return (
+        <div className={className} {...props}>
+          {children}
+        </div>
+      );
+    },
+    // 自定义 pre 标签（代码块容器）
+    pre({ children }: ComponentPropsWithoutRef<"pre">) {
+      const firstChild = Children.count(children) > 0 ? Children.toArray(children)[0] : null;
+
+      if (
+        isValidElement<{ className?: string }>(firstChild) &&
+        typeof firstChild.props.className === "string" &&
+        firstChild.props.className.includes("language-mermaid")
+      ) {
+        return <>{children}</>;
+      }
+
+      return (
+        <pre tabIndex={0} className="bg-[var(--code-bg)] border border-[var(--code-border)] rounded-md p-4 my-4 overflow-x-auto">
+          {children}
+        </pre>
+      );
+    },
+    // 自定义 code 标签
+    code({ className, children, ...props }: ComponentPropsWithoutRef<"code">) {
+      const match = /language-(\w+)/.exec(className || "");
+      const language = match ? match[1] : "";
+
+      if (language.toLowerCase() === "mermaid") {
+        const chart = String(children).trim();
+        return <MermaidDiagram chart={chart} />;
+      }
+
+      // 如果是代码块（有 className），只返回 code 标签，因为 pre 已经由上面的组件处理了
+      if (className) {
+        return (
+          <code className={language ? `language-${language}` : ""} {...props}>
+            {children}
+          </code>
+        );
+      }
+
+      // 行内代码
+      return (
+        <code className="px-1.5 py-0.5 bg-[var(--code-bg)] text-[var(--accent-600)] rounded text-sm font-mono">
+          {children}
+        </code>
+      );
+    },
+    // 自定义图片
+    img({ src, alt, ...props }: ComponentPropsWithoutRef<"img">) {
+      const imageSrc = typeof src === "string" ? src : undefined;
+
+      return (
+        <ZoomableImage
+          src={imageSrc}
+          alt={alt}
+          className="block max-w-full mx-auto rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"
+          {...props}
+        />
+      );
+    },
+    a({ href, children, ...props }: ComponentPropsWithoutRef<"a">) {
+      const resolvedHref = href && docRouteBasePath ? resolveDocHref(href, docRouteBasePath) : href;
+
+      if (resolvedHref && resolvedHref.startsWith("/")) {
+        return (
+          <Link href={resolvedHref} {...props}>
+            {children}
+          </Link>
+        );
+      }
+
+      return (
+        <a href={resolvedHref} {...props}>
+          {children}
+        </a>
+      );
+    },
+  } as Components;
+
   return (
     <div ref={articleRef} className="docs-prose">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath, remarkPreserveBlankLines]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkMath, remarkCodeTabs, remarkPreserveBlankLines]}
         rehypePlugins={[rehypeSlug, rehypeRaw, rehypeKatex]}
-        components={{
-          // 自定义 pre 标签（代码块容器）
-          pre({ children }: ComponentPropsWithoutRef<"pre">) {
-            const firstChild = Children.count(children) > 0 ? Children.toArray(children)[0] : null;
-
-            if (
-              isValidElement<{ className?: string }>(firstChild) &&
-              typeof firstChild.props.className === "string" &&
-              firstChild.props.className.includes("language-mermaid")
-            ) {
-              return <>{children}</>;
-            }
-
-            return (
-              <pre tabIndex={0} className="bg-[var(--code-bg)] border border-[var(--code-border)] rounded-md p-4 my-4 overflow-x-auto">
-                {children}
-              </pre>
-            );
-          },
-          // 自定义 code 标签
-          code({ className, children, ...props }: ComponentPropsWithoutRef<"code">) {
-            const match = /language-(\w+)/.exec(className || "");
-            const language = match ? match[1] : "";
-
-            if (language.toLowerCase() === "mermaid") {
-              const chart = String(children).trim();
-              return <MermaidDiagram chart={chart} />;
-            }
-            
-            // 如果是代码块（有 className），只返回 code 标签，因为 pre 已经由上面的组件处理了
-            if (className) {
-              return (
-                <code className={language ? `language-${language}` : ""} {...props}>
-                  {children}
-                </code>
-              );
-            }
-            
-            // 行内代码
-            return (
-              <code className="px-1.5 py-0.5 bg-[var(--code-bg)] text-[var(--accent-600)] rounded text-sm font-mono">
-                {children}
-              </code>
-            );
-          },
-          // 自定义图片
-          img({ src, alt, ...props }: ComponentPropsWithoutRef<"img">) {
-            const imageSrc = typeof src === "string" ? src : undefined;
-
-            return (
-              <ZoomableImage
-                src={imageSrc}
-                alt={alt} 
-                className="block max-w-full mx-auto rounded-md my-6 cursor-zoom-in border border-[var(--border-default)]"
-                {...props}
-              />
-            );
-          },
-          a({ href, children, ...props }: ComponentPropsWithoutRef<"a">) {
-            const resolvedHref = href && docRouteBasePath ? resolveDocHref(href, docRouteBasePath) : href;
-
-            if (resolvedHref && resolvedHref.startsWith("/")) {
-              return (
-                <Link href={resolvedHref} {...props}>
-                  {children}
-                </Link>
-              );
-            }
-
-            return (
-              <a href={resolvedHref} {...props}>
-                {children}
-              </a>
-            );
-          },
-        }}
+        components={markdownComponents}
       >
         {processedContent}
       </ReactMarkdown>

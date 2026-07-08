@@ -1,6 +1,18 @@
 {
   "title": "猫咪文档",
   "description": "探索技术文档和教程",
+  "url": "https://docs.whuanle.cn",
+  "author": "whuanle",
+  "keywords": [
+    "技术文档",
+    "教程",
+    "Kubernetes",
+    "Istio",
+    ".NET",
+    "C#",
+    "AI Agent",
+    "深度学习"
+  ],
   "customHeadHtmlFile": "config/custom-head.html",
   "headerLinks": [
     {

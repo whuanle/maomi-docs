@@ -22,6 +22,9 @@ export interface SiteBeian {
 export interface SiteConfig {
   title: string;
   description: string;
+  url?: string;
+  author?: string;
+  keywords?: string[];
   headerLinks: SiteLink[];
   footerLinks: SiteLink[];
   beian: SiteBeian;
@@ -31,6 +34,9 @@ export interface SiteConfig {
 const DEFAULT_SITE_CONFIG: SiteConfig = {
   title: "技术文档",
   description: "探索技术文档和教程",
+  url: undefined,
+  author: undefined,
+  keywords: undefined,
   headerLinks: [],
   footerLinks: [],
   beian: {
@@ -139,6 +145,18 @@ function normalizeLinks(value: unknown): SiteLink[] {
     .filter((item): item is SiteLink => item !== null);
 }
 
+function normalizeKeywords(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const keywords = value
+    .map((item) => normalizeText(item))
+    .filter(Boolean);
+
+  return keywords.length > 0 ? keywords : undefined;
+}
+
 function normalizeRecord(value: unknown): SiteRecord | undefined {
   if (!value || typeof value !== "object") {
     return undefined;
@@ -168,6 +186,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     const title = normalizeText(parsed.title) || DEFAULT_SITE_CONFIG.title;
     const description =
       normalizeText(parsed.description) || DEFAULT_SITE_CONFIG.description;
+    const url = normalizeText(parsed.url) || undefined;
+    const author = normalizeText(parsed.author) || undefined;
+    const keywords = normalizeKeywords(parsed.keywords);
     const customHeadHtml = await resolveCustomHeadHtml(
       parsed.customHeadHtml,
       parsed.customHeadHtmlFile,
@@ -176,6 +197,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     return {
       title,
       description,
+      url,
+      author,
+      keywords,
       headerLinks: normalizeLinks(parsed.headerLinks),
       footerLinks: normalizeLinks(parsed.footerLinks),
       beian: {
