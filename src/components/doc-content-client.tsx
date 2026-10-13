@@ -230,19 +230,45 @@ function resolveDocHref(href: string, docRouteBasePath: string): string {
   return `${resolvedPath}${search}${hash}`;
 }
 
+// 非 md 的相对链接指向文档库里的附属文件（如 docker-compose.yml），
+// 重写到 /docs 静态路由（由 next.config rewrites 转发到 /api/docs）供下载
+function resolveDocAssetHref(href: string, docBaseDir: string): string | null {
+  const trimmed = href.trim();
+
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(trimmed)) {
+    return null;
+  }
+
+  const match = trimmed.replace(/\\/g, "/").match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
+  const relativePath = match?.[1] ?? trimmed;
+  if (!relativePath || /\.mdx?$/i.test(relativePath)) {
+    return null;
+  }
+
+  return path.posix.normalize(path.posix.join(docBaseDir, relativePath));
+}
+
 export function DocContentClient({ content, filePath, currentPath }: DocContentClientProps) {
   const articleRef = useRef<HTMLDivElement>(null);
 
   // 预处理 content
   let processedContent = content;
-  
+
   // 1. 移除 frontmatter
   processedContent = stripFrontmatter(processedContent);
 
-  // 2. 处理图片路径
-  if (filePath) {
-    const docBaseDir = getDocBaseDir(filePath);
-    
+  const docBaseDir = filePath ? getDocBaseDir(filePath) : null;
+
+  // 2. 处理图片/视频路径
+  if (docBaseDir) {
+    // markdown 视频语法 ![alt](demo.mp4) 转为 <video> 播放器
+    processedContent = processedContent.replace(
+      /!\[([^\]]*)\]\(([^)]+\.(?:mp4|m4v|webm|mov|ogv))\)/gi,
+      (match, alt, src) => {
+        return `<video controls preload="metadata" src="${resolveAssetSrc(src, docBaseDir)}"></video>`;
+      }
+    );
+
     // 处理 markdown 图片路径 ![alt](src)
     processedContent = processedContent.replace(
       /!\[([^\]]*)\]\((?!http|\/)([^)]+)\)/g,
@@ -250,13 +276,24 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
         return `![${alt}](${resolveAssetSrc(src, docBaseDir)})`;
       }
     );
-    
+
     // 处理 HTML img 标签的 src
     processedContent = processedContent.replace(
       /<img\s+([^\u003e]*)src=["'](?!http|\/)([^"']+)["']([^\u003e]*)\u003e/g,
       (match, before, src, after) => {
         return `<img ${before}src="${resolveAssetSrc(src, docBaseDir)}"${after}>`;
       }
+    );
+
+    // 处理 HTML video / source 标签的 src
+    processedContent = processedContent.replace(
+      /(<video\b[^\u003e]*?\bsrc=["'])(?!http|\/)([^"']+)(["'])/gi,
+      (match, prefix, src, quote) => `${prefix}${resolveAssetSrc(src, docBaseDir)}${quote}`
+    );
+
+    processedContent = processedContent.replace(
+      /(<source\b[^\u003e]*?\bsrc=["'])(?!http|\/)([^"']+)(["'])/gi,
+      (match, prefix, src, quote) => `${prefix}${resolveAssetSrc(src, docBaseDir)}${quote}`
     );
   }
 
@@ -341,8 +378,31 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
         />
       );
     },
-    a({ href, children, ...props }: ComponentPropsWithoutRef<"a">) {
+    // 自定义视频：统一宽度样式，默认可控制播放
+    video({ className, children, node: _node, ...props }: ComponentPropsWithoutRef<"video"> & { node?: unknown }) {
+      return (
+        <video
+          className={className ?? "block max-w-full mx-auto rounded-md my-6 border border-[var(--border-default)]"}
+          {...props}
+          controls
+          preload="metadata"
+        >
+          {children}
+        </video>
+      );
+    },
+    a({ href, children, node: _node, ...props }: ComponentPropsWithoutRef<"a"> & { node?: unknown }) {
       const resolvedHref = href && docRouteBasePath ? resolveDocHref(href, docRouteBasePath) : href;
+
+      // 附属文件链接：走 /docs 静态路由并以下载方式打开，避免浏览器当成页面路由 404
+      const assetHref = resolvedHref && docBaseDir ? resolveDocAssetHref(resolvedHref, docBaseDir) : null;
+      if (assetHref) {
+        return (
+          <a href={assetHref} download {...props}>
+            {children}
+          </a>
+        );
+      }
 
       if (resolvedHref && resolvedHref.startsWith("/")) {
         return (
