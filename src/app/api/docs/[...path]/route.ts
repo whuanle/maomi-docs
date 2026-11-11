@@ -1,91 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "node:fs/promises";
 import { createReadStream } from "node:fs";
+import fs from "node:fs/promises";
 import { Readable } from "node:stream";
-import path from "node:path";
 import crypto from "node:crypto";
+import {
+  MEDIA_EXTENSIONS,
+  isCrossOriginReadableAsset,
+  resolveDocAsset,
+} from "@/lib/docs-asset";
+import { isHotlinkBlocked } from "@/lib/hotlink";
 
-const docsRoot = path.join(process.cwd(), "docs");
-const IMAGE_ASSET_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".svg",
-  ".webp",
-  ".ico",
-  ".bmp",
-  ".avif",
-]);
-// 音视频走流式 + Range 响应，避免整文件读进内存
-const MEDIA_EXTENSIONS = new Set([
-  ".mp4",
-  ".m4v",
-  ".webm",
-  ".mov",
-  ".ogv",
-  ".mp3",
-  ".wav",
-  ".m4a",
-]);
-const CACHEABLE_ASSET_EXTENSIONS = new Set([
-  ...IMAGE_ASSET_EXTENSIONS,
-  ...MEDIA_EXTENSIONS,
-]);
 const VERSIONED_ASSET_CACHE_CONTROL = "public, max-age=31536000, s-maxage=31536000, immutable";
 const REVALIDATED_CACHE_CONTROL = "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path: pathSegments } = await params;
-  const safeSegments = pathSegments.map((segment) => path.normalize(segment));
-  const filePath = path.resolve(docsRoot, ...safeSegments);
-  
-  // 安全检查：确保文件在 docs 目录内
-  if (!filePath.startsWith(docsRoot)) {
+  const asset = await resolveDocAsset(pathSegments);
+
+  if (asset.status === "forbidden") {
     return new NextResponse("Forbidden", { status: 403 });
   }
-  
-  try {
-    const ext = path.extname(filePath).toLowerCase();
-    const stats = await fs.stat(filePath);
 
-    if (!stats.isFile()) {
-      return new NextResponse("Not Found", { status: 404 });
-    }
+  if (asset.status === "not_found") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
 
-    // 根据文件扩展名设置 Content-Type
-    const contentType = getContentType(ext);
-    const cacheControl = getCacheControl(ext);
-    const lastModified = stats.mtime.toUTCString();
-    const etag = createEtag(stats.size, stats.mtimeMs);
-    const headers = buildBaseHeaders(ext);
-
-    headers.set("Content-Type", contentType);
-    headers.set("Cache-Control", cacheControl);
-    headers.set("Last-Modified", lastModified);
-    headers.set("ETag", etag);
-
-    if (isConditionalRequestMatched(_request, etag, stats.mtimeMs)) {
-      return new NextResponse(null, {
-        status: 304,
-        headers,
-      });
-    }
-
-    if (MEDIA_EXTENSIONS.has(ext)) {
-      return serveMediaFile(_request, filePath, stats.size, headers);
-    }
-
-    const file = await fs.readFile(filePath);
-    return new NextResponse(file, {
-      headers,
+  // 防盗链：图片/音视频被外站 `<img>` / 播放器嵌入时，Referer/Origin 必须同源或在
+  // ALLOWED_HOTLINK_ORIGINS 白名单内。地址栏直接打开（无 Referer）不受影响。
+  // 拦截响应禁用缓存，避免 CDN 把 403 缓存给正常用户。
+  if (isHotlinkBlocked(request.headers, asset.ext)) {
+    return new NextResponse("Forbidden", {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
     });
+  }
+
+  const { filePath, ext, size, mtimeMs } = asset;
+  const contentType = getContentType(ext);
+  const headers = buildBaseHeaders(ext);
+  const etag = createEtag(size, mtimeMs);
+
+  headers.set("Content-Type", contentType);
+  headers.set("Cache-Control", getCacheControl(ext));
+  headers.set("Last-Modified", new Date(mtimeMs).toUTCString());
+  headers.set("ETag", etag);
+
+  if (isConditionalRequestMatched(request, etag, mtimeMs)) {
+    return new NextResponse(null, { status: 304, headers });
+  }
+
+  if (MEDIA_EXTENSIONS.has(ext)) {
+    return serveMediaFile(request, filePath, size, headers);
+  }
+
+  let file: Buffer;
+  try {
+    file = await fs.readFile(filePath);
   } catch {
     return new NextResponse("Not Found", { status: 404 });
   }
+
+  return new NextResponse(new Uint8Array(file), { headers });
 }
 
 export async function OPTIONS(
@@ -93,17 +71,15 @@ export async function OPTIONS(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path: pathSegments } = await params;
-  const safeSegments = pathSegments.map((segment) => path.normalize(segment));
-  const filePath = path.resolve(docsRoot, ...safeSegments);
+  const asset = await resolveDocAsset(pathSegments);
 
-  if (!filePath.startsWith(docsRoot)) {
-    return new NextResponse("Forbidden", { status: 403 });
+  if (asset.status !== "ok") {
+    return new NextResponse(null, { status: asset.status === "forbidden" ? 403 : 404 });
   }
 
-  const ext = path.extname(filePath).toLowerCase();
   return new NextResponse(null, {
     status: 204,
-    headers: buildBaseHeaders(ext),
+    headers: buildBaseHeaders(asset.ext),
   });
 }
 
@@ -198,15 +174,25 @@ function serveMediaFile(
 function buildBaseHeaders(ext: string) {
   const headers = new Headers();
 
-  headers.set("Vary", "If-None-Match, If-Modified-Since");
+  headers.set("Vary", "If-None-Match, If-Modified-Since, Origin");
   headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("Access-Control-Allow-Origin", "*");
-  headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  headers.set("Access-Control-Allow-Headers", "*");
   headers.set(
     "Cross-Origin-Resource-Policy",
-    CACHEABLE_ASSET_EXTENSIONS.has(ext) ? "cross-origin" : "same-origin",
+    isCrossOriginReadableAsset(ext) ? "cross-origin" : "same-origin",
   );
+
+  // 仅图片/音视频允许跨域读取；文本类资源不下发 ACAO，防止被任意站点 fetch 走文档正文
+  if (isCrossOriginReadableAsset(ext)) {
+    headers.set("Access-Control-Allow-Origin", "*");
+    headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Range, If-None-Match, If-Modified-Since");
+    headers.set("Access-Control-Expose-Headers", "Content-Length, Content-Range, ETag");
+  }
+
+  // 下载型资源强制 attachment，避免浏览器在同一源下把未知类型当页面渲染
+  if (!MEDIA_EXTENSIONS.has(ext) && !isCrossOriginReadableAsset(ext)) {
+    headers.set("Content-Disposition", "inline");
+  }
 
   return headers;
 }
@@ -245,7 +231,7 @@ function isConditionalRequestMatched(
 }
 
 function getCacheControl(ext: string) {
-  if (CACHEABLE_ASSET_EXTENSIONS.has(ext)) {
+  if (isCrossOriginReadableAsset(ext)) {
     return VERSIONED_ASSET_CACHE_CONTROL;
   }
 
@@ -263,8 +249,22 @@ function getContentType(ext: string): string {
     ".avif": "image/avif",
     ".ico": "image/x-icon",
     ".bmp": "image/bmp",
-    ".md": "text/markdown",
-    ".json": "application/json",
+    ".md": "text/markdown; charset=utf-8",
+    ".mdx": "text/markdown; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+    ".csv": "text/csv; charset=utf-8",
+    ".log": "text/plain; charset=utf-8",
+    ".sql": "text/plain; charset=utf-8",
+    ".cs": "text/plain; charset=utf-8",
+    ".sh": "text/plain; charset=utf-8",
+    ".ps1": "text/plain; charset=utf-8",
+    ".yml": "text/yaml; charset=utf-8",
+    ".yaml": "text/yaml; charset=utf-8",
+    ".toml": "text/plain; charset=utf-8",
+    ".conf": "text/plain; charset=utf-8",
+    ".xml": "application/xml; charset=utf-8",
+    ".pdf": "application/pdf",
     ".mp4": "video/mp4",
     ".m4v": "video/mp4",
     ".webm": "video/webm",

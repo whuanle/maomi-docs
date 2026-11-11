@@ -5,6 +5,7 @@ import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { rehypeSanitizeHtml } from "@/lib/rehype-sanitize-html";
 import styles from "./homepage-mdx-renderer.module.css";
 
 export function HomepageMdxRenderer({ content }: { content: string }) {
@@ -13,7 +14,7 @@ export function HomepageMdxRenderer({ content }: { content: string }) {
       <div className={styles.content}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
-          rehypePlugins={[rehypeSlug, rehypeRaw, rehypeKatex]}
+          rehypePlugins={[rehypeSlug, rehypeRaw, rehypeSanitizeHtml, rehypeKatex]}
         >
           {content}
         </ReactMarkdown>

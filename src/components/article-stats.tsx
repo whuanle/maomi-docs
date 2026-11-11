@@ -43,6 +43,31 @@ function markLikedToday(docPath: string) {
   }
 }
 
+const VISITOR_ID_KEY = "mmd_visitor_id";
+
+/**
+ * 稳定的匿名访客标识，仅用于统计去重（服务端只存它的哈希）。
+ * 不承载任何身份信息，清空 localStorage 即换新身份。
+ */
+function getVisitorId() {
+  try {
+    const existing = localStorage.getItem(VISITOR_ID_KEY);
+    if (existing && /^[a-zA-Z0-9_-]{8,64}$/.test(existing)) {
+      return existing;
+    }
+
+    const generated =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID().replace(/-/g, "")
+        : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`.slice(0, 32);
+
+    localStorage.setItem(VISITOR_ID_KEY, generated);
+    return generated;
+  } catch {
+    return "";
+  }
+}
+
 export function ArticleStats({
   docPath,
   initialViews,
@@ -58,10 +83,12 @@ export function ArticleStats({
   // 统计由客户端唯一上报，服务端只读取，避免一次访问被计两次。
   useEffect(() => {
     let cancelled = false;
+    const visitorId = getVisitorId();
+
     fetch("/api/stats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "view", path: docPath }),
+      body: JSON.stringify({ type: "view", path: docPath, visitorId }),
       keepalive: true,
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -86,9 +113,14 @@ export function ArticleStats({
       const res = await fetch("/api/stats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "like", path: docPath }),
+        body: JSON.stringify({ type: "like", path: docPath, visitorId: getVisitorId() }),
       });
-      const data = res.ok ? await res.json() : null;
+      if (!res.ok) {
+        // 限流/服务异常时不标记已赞，否则用户当天再也点不了
+        return;
+      }
+
+      const data = await res.json();
       markLikedToday(docPath);
       setLiked(true);
       setLikes((prev) => prev + 1);

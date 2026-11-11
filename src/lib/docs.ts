@@ -234,6 +234,12 @@ async function buildSidebarNodesFromMap(
 }
 
 export async function getModuleContent(moduleId: string, locale: string) {
+  // moduleId 来自 URL 动态段，直接参与 path.join 会退化成目录穿越（../ 可以跳出 docs 根）。
+  // 模块名只可能是 map.json 里登记的目录名，先卡一遍形态再做任何 IO。
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(moduleId)) {
+    return null;
+  }
+
   const modulePath = path.join(docsRoot, moduleId);
   const moduleMapPath = path.join(modulePath, "map.json");
 

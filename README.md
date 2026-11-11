@@ -10,7 +10,7 @@
 
 最常见的部署方式是同时挂载 `site.json` 和 `docs`。这样镜像可以保持固定，配置和文档由宿主机管理，无需因为文档更新而重新构建镜像。
 
-> 注意：`docs` 目录需要以**可写**方式挂载（不要加 `:ro`），否则阅读量、点赞等统计数据无法写入 `docs/.stats/`。
+> 注意：镜像内 `STATS_DIR=/app/data`，统计库写入该独立目录，因此 `docs` 与 `config` 可以用 `:ro` 只读挂载；本地 `npm run dev` 未设置该变量时统计写入 `docs/.stats`，需保持可写。
 
 Linux / macOS：
 
@@ -480,25 +480,72 @@ http://your-host/mcp
 
 ### MCP 安全与限流
 
-为了避免恶意流量和并发搜索把服务器拖垮，MCP 与搜索接口都加了服务端保护：
+为了避免恶意流量和并发搜索把服务器拖垮，MCP、搜索、统计、llms 导出都加了服务端保护：
 
-- 按客户端 IP 固定窗口限流
+- 按客户端 IP 固定窗口限流（各接口独立限流桶）
 - 搜索任务全局并发上限
-- 搜索索引内存缓存，减少反复扫盘
+- 搜索索引内存缓存 + locale 白名单 + 缓存桶数量上限（防止任意 locale 撑爆内存）
+- JSON 请求体读取带体积上限（先看 Content-Length，再流式二次校验）
+- 图片/音视频 Referer/Origin 防盗链
 - 可选 Bearer Token 鉴权
 
 支持的环境变量：
 
-- `MCP_AUTH_TOKEN`：设置后，调用 `/mcp` 必须带 `Authorization: Bearer <token>`
-- `MCP_RATE_LIMIT_WINDOW_MS`：MCP 限流窗口，默认 `60000`
-- `MCP_RATE_LIMIT_MAX_REQUESTS`：每个 IP 在窗口内最大 MCP 请求数，默认 `30`
-- `SEARCH_RATE_LIMIT_WINDOW_MS`：普通搜索接口限流窗口，默认 `60000`
-- `SEARCH_RATE_LIMIT_MAX_REQUESTS`：每个 IP 在窗口内最大搜索请求数，默认 `90`
-- `SEARCH_MAX_CONCURRENT_REQUESTS`：搜索最大并发数，默认 `4`
-- `SEARCH_INDEX_TTL_MS`：搜索索引缓存时长，默认 `300000`
+| 变量 | 说明 | 默认值 |
+| --- | --- | --- |
+| `MCP_AUTH_TOKEN` | 设置后，调用 `/mcp` 必须带 `Authorization: Bearer <token>`；站点对外提供服务时应设置 | 空 |
+| `TRUSTED_PROXY_HOPS` | 可信反代层数，决定从 `X-Forwarded-For` 右侧第几段取客户端 IP；直连公网应设 `0` | `1` |
+| `ALLOWED_HOTLINK_ORIGINS` | 允许外站引用图片的来源，逗号分隔（可写完整 origin 或裸 host）；同源始终放行，无 Referer/Origin 的直接访问也放行 | 空 |
+| `MCP_RATE_LIMIT_WINDOW_MS` | MCP 限流窗口 | `60000` |
+| `MCP_RATE_LIMIT_MAX_REQUESTS` | 每个 IP 在窗口内最大 MCP 请求数 | `30` |
+| `SEARCH_RATE_LIMIT_WINDOW_MS` | 普通搜索接口限流窗口 | `60000` |
+| `SEARCH_RATE_LIMIT_MAX_REQUESTS` | 每个 IP 在窗口内最大搜索请求数 | `90` |
+| `SEARCH_MAX_CONCURRENT_REQUESTS` | 搜索最大并发数 | `4` |
+| `SEARCH_INDEX_TTL_MS` | 搜索索引缓存时长 | `300000` |
+| `STATS_RATE_LIMIT_WINDOW_MS` | 统计接口限流窗口 | `60000` |
+| `STATS_RATE_LIMIT_MAX_REQUESTS` | 每个 IP 在窗口内最大统计请求数 | `120` |
+| `LLM_RATE_LIMIT_WINDOW_MS` | `llms.txt` / `llms-full.txt` 共享限流窗口 | `60000` |
+| `LLM_RATE_LIMIT_MAX_REQUESTS` | 每个 IP 在窗口内最大 llms 导出请求数 | `20` |
 
-如果你要对公网开放，最低要求是同时设置：
+站点对外提供服务时，至少设置 `MCP_AUTH_TOKEN`，并按实际反代层数核对 `TRUSTED_PROXY_HOPS`（配错会让按 IP 限流失效）。更大流量的攻击需要在部署侧的 CDN/WAF 处理，本项目代码不覆盖这一层。
 
-- `MCP_AUTH_TOKEN`
-- 反向代理层限流
-- CDN 或 WAF
+## 应用层安全加固
+
+本项目代码内置的防护，按入口收敛如下：
+
+| 位置 | 措施 |
+| --- | --- |
+| `next.config.ts` | CSP / HSTS / X-Frame-Options / nosniff / Referrer-Policy / Permissions-Policy、`poweredByHeader: false`、静态资源长缓存 |
+| `src/lib/server-protection.ts` | 按 IP 固定窗口限流（MCP / 搜索 / 统计 / llms 各自独立）、搜索全局并发上限、请求体流式读取上限、从 XFF 右侧取 IP 防伪造、恒定时间 Token 比较 |
+| `src/lib/hotlink.ts`、`src/app/api/docs/[...path]/route.ts` | 图片/音视频 Referer/Origin 防盗链；`Origin: null` 与非法 Referer 拦截；403 响应 `no-store` |
+| `src/lib/docs-asset.ts` | 路径穿越、扩展名白名单、软链 realpath 边界校验、隐藏目录拒绝、超大文件上限 |
+| `src/lib/search.ts` | locale 白名单、索引缓存桶数量上限与过期清理、单文档/结果数量上限 |
+| `src/app/llms.txt`、`src/app/llms-full.txt` | 全量导出接口按 IP 限流，正文截断上限 |
+| `src/app/api/stats/route.ts` | 请求体 4KB 上限、docPath/visitorId 形态校验、去重键哈希化 |
+
+### 本地自检
+
+先 `npm run dev`，然后在本机验证：
+
+```bash
+# 1) 外站引用图片应被 403；直接打开（无 Referer）应 200
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Referer: https://evil.example.com/' \
+  http://localhost:3000/docs/maomi_framework/images/1708249302076.png
+curl -s -o /dev/null -w '%{http_code}\n' \
+  http://localhost:3000/docs/maomi_framework/images/1708249302076.png
+
+# 2) 非法 locale 回退 zh（200），超长 query 被 400 拒绝
+curl -s -o /dev/null -w '%{http_code}\n' 'http://localhost:3000/api/search?q=test&locale=aaaaaaaaaaaaaaaaaaaa'
+curl -s -o /dev/null -w '%{http_code}\n' "http://localhost:3000/api/search?q=$(python -c 'print("a"*500)')"
+
+# 3) 连续请求 llms-full.txt 触发 429，并带 X-RateLimit-* / Retry-After
+for i in $(seq 1 25); do curl -s -o /dev/null -w '%{http_code} ' http://localhost:3000/llms-full.txt; done
+
+# 4) 设置 MCP_AUTH_TOKEN 后，不带 Token 调用 /mcp 应 401
+MCP_AUTH_TOKEN=test-token npm run dev
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+> 说明：限流是**单实例内存计数**，多副本部署时每个副本各自计数；带宽型 DDoS 需要上游清洗，应用层配置挡不住。

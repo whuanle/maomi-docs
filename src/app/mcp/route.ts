@@ -1,9 +1,12 @@
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { searchDocs } from "@/lib/search";
+import { sanitizeLocale, searchDocs } from "@/lib/search";
 import {
   checkMcpRateLimit,
   createRateLimitHeaders,
   extractClientIp,
+  readJsonBody,
+  RequestBodyTooLargeError,
   runSearchTask,
   ServerBusyError,
 } from "@/lib/server-protection";
@@ -17,6 +20,8 @@ const SERVER_INFO = {
 };
 const MCP_PROTOCOL_VERSION = "2025-06-18";
 const SEARCH_TOOL_NAME = "search_docs";
+// JSON-RPC 请求里只有 query/locale/limit，超过这个体积一定是异常流量
+const MAX_BODY_BYTES = 64 * 1024;
 
 export async function GET() {
   return NextResponse.json(
@@ -61,8 +66,19 @@ export async function POST(request: NextRequest) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
+    body = await readJsonBody(request, MAX_BODY_BYTES);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return createJsonRpcErrorResponse(
+        null,
+        -32600,
+        "Request body too large",
+        413,
+        undefined,
+        createRateLimitHeaders(rateLimit),
+      );
+    }
+
     return createJsonRpcErrorResponse(null, -32700, "Parse error", 400, undefined, createRateLimitHeaders(rateLimit));
   }
 
@@ -187,7 +203,8 @@ async function handleToolCall(
         : null;
 
   const query = typeof rawArguments?.query === "string" ? rawArguments.query.trim() : "";
-  const locale = typeof rawArguments?.locale === "string" ? rawArguments.locale.trim() || "zh" : "zh";
+  // locale 是搜索索引缓存的 key，必须过白名单形态校验，防止任意值撑爆缓存
+  const locale = sanitizeLocale(rawArguments?.locale);
   const limitValue = typeof rawArguments?.limit === "number" ? rawArguments.limit : Number(rawArguments?.limit);
   const limit = Number.isFinite(limitValue) ? Math.min(Math.max(Math.trunc(limitValue), 1), 20) : 8;
 
@@ -250,8 +267,9 @@ function validateAuth(request: NextRequest) {
     return null;
   }
 
-  const authorization = request.headers.get("authorization");
-  if (authorization === `Bearer ${token}`) {
+  const authorization = request.headers.get("authorization") ?? "";
+  // 恒定时间比较：避免通过响应耗时逐字符猜出 token
+  if (safeEqual(authorization, `Bearer ${token}`)) {
     return null;
   }
 
@@ -272,6 +290,17 @@ function validateAuth(request: NextRequest) {
       },
     },
   );
+}
+
+function safeEqual(left: string, right: string) {
+  const leftBuffer = Buffer.from(left, "utf8");
+  const rightBuffer = Buffer.from(right, "utf8");
+
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 function createSearchToolDefinition() {

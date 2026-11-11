@@ -29,7 +29,9 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
         mermaid.initialize({
           startOnLoad: false,
-          securityLevel: "loose",
+          // loose 会保留 click 回调与未净化的 HTML 标签，文档里的 mermaid 代码块就成了 XSS 入口；
+          // strict 由 mermaid 内置的 DOMPurify 清洗，图表语法不受影响。
+          securityLevel: "strict",
           theme: mermaidTheme,
           themeVariables: {
             fontFamily: '"Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',

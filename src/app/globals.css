@@ -115,6 +115,17 @@ body {
   line-height: 1.75; 
 }
 
+/* 文档里的内联 <script> 会在渲染前被清洗掉（见 lib/rehype-sanitize-html.ts），
+   原先靠脚本计算高度的 B 站播放器等 iframe 统一用固定比例兜底。 */
+.docs-prose iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  margin: 1.5rem 0;
+  border: 0;
+}
+
 .docs-prose :is(h1, h2, h3, h4, h5, h6) {
   color: var(--text-heading);
   font-weight: 700;
@@ -561,4 +572,78 @@ pre[class*="language-"] {
 .dark .token.important,
 .dark .token.variable {
   color: #ffa657;
+}
+
+/* 文档内折叠块：docs 里写 <details class="doc-collapse"><summary>标题</summary>…</details>
+   docs/ 目录不参与 Tailwind 扫描，样式必须定义在这里 */
+.docs-prose details.doc-collapse {
+  margin: 1.5rem 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.docs-prose details.doc-collapse > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  background: var(--code-bg);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: filter 0.15s ease;
+}
+
+.docs-prose details.doc-collapse > summary::-webkit-details-marker {
+  display: none;
+}
+
+.docs-prose details.doc-collapse > summary:hover {
+  filter: brightness(0.96);
+}
+
+.dark .docs-prose details.doc-collapse > summary:hover {
+  filter: brightness(1.2);
+}
+
+.docs-prose details.doc-collapse > summary::after {
+  content: "❯";
+  font-size: 0.85em;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.docs-prose details.doc-collapse[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+/* summary 里可选的双文案：折叠时显示 collapsed、展开时显示 expanded */
+.docs-prose details.doc-collapse .label-expanded {
+  display: none;
+}
+
+.docs-prose details.doc-collapse[open] .label-expanded {
+  display: inline;
+}
+
+.docs-prose details.doc-collapse[open] .label-collapsed {
+  display: none;
+}
+
+.docs-prose details.doc-collapse > *:not(summary) {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.docs-prose details.doc-collapse > *:not(summary):first-of-type {
+  padding-top: 1rem;
+}
+
+.docs-prose details.doc-collapse > *:not(summary):last-child {
+  padding-bottom: 1rem;
+  margin-bottom: 0;
 }

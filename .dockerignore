@@ -1,8 +1,24 @@
 .git
 .gitignore
 .next
-docs
 node_modules
 npm-debug.log*
 README.md
 tsconfig.tsbuildinfo
+docs
+images
+thoughts
+.workbuddy
+.zcode
+.github
+
+# 绝不能进镜像：环境变量与本地密钥
+.env
+.env.*
+*.pem
+*.key
+
+# 本地缓存/日志
+*.log
+.dev.log
+.tmp-*

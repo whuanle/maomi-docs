@@ -25,6 +25,27 @@ interface SearchIndexCacheEntry {
 const DEFAULT_SEARCH_INDEX_TTL_MS = 5 * 60 * 1000;
 const searchIndexCache = new Map<string, SearchIndexCacheEntry>();
 
+/**
+ * 索引缓存的语言桶上限。每个 locale 会持有一份全量文档索引（正文各存两份大小写），
+ * 不设上限时攻击者轮换 locale 值就能把内存吃穿。正常站点只有一两个 locale，
+ * 16 个桶足够宽裕，超了按插入顺序淘汰最旧的。
+ */
+const MAX_SEARCH_INDEX_LOCALES = 16;
+
+/**
+ * locale 白名单形态校验。
+ *
+ * locale 直接作为索引缓存 key 使用：不校验的话，`?locale=a`、`?locale=b`…… 每个值都会
+ * 触发一次全量扫盘建索引并永久驻留缓存（过期条目只在被再次访问时才替换，key 本身不清理），
+ * 是一个廉价的内存耗尽 DoS 向量。不匹配的值一律回退 zh。
+ */
+const LOCALE_PATTERN = /^[a-z]{2,3}(?:-[a-z0-9]{1,8})?$/;
+
+export function sanitizeLocale(value: unknown): string {
+  const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return LOCALE_PATTERN.test(raw) ? raw : "zh";
+}
+
 export async function searchDocs({
   query,
   locale = "zh",
@@ -77,6 +98,8 @@ async function getSearchIndex(locale: string) {
     return cached.pending;
   }
 
+  pruneSearchIndexCache(now);
+
   const pending = buildSearchIndex(locale)
     .then((entries) => {
       searchIndexCache.set(locale, {
@@ -102,6 +125,27 @@ async function getSearchIndex(locale: string) {
   });
 
   return pending;
+}
+
+/**
+ * 缓存清理：先清过期桶，仍然超上限就按插入顺序淘汰最旧的桶。
+ * 删除带 pending 的桶是安全的：构建完成后 then 回调会把结果重新写回缓存。
+ */
+function pruneSearchIndexCache(now: number) {
+  for (const [key, value] of searchIndexCache) {
+    if (!value.pending && value.expiresAt <= now) {
+      searchIndexCache.delete(key);
+    }
+  }
+
+  while (searchIndexCache.size >= MAX_SEARCH_INDEX_LOCALES) {
+    const oldestKey = searchIndexCache.keys().next().value;
+    if (oldestKey === undefined) {
+      break;
+    }
+
+    searchIndexCache.delete(oldestKey);
+  }
 }
 
 async function buildSearchIndex(locale: string) {

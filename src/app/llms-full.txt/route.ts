@@ -1,8 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { stripFrontmatter } from "@/lib/doc-summary";
 import { buildDocCatalog } from "@/lib/llms-catalog";
 import { getSiteConfig } from "@/lib/site-config";
 import { getSiteUrl } from "@/lib/site-url";
+import {
+  checkLlmRateLimit,
+  createRateLimitHeaders,
+  extractClientIp,
+} from "@/lib/server-protection";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +16,21 @@ const MAX_BODY_CHARS = 20_000;
 const TEXT_CACHE_CONTROL =
   "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // llms-full.txt 是全量正文导出，与 llms.txt 共享限流桶，防止被廉价脚本拉垮
+  const rateLimit = checkLlmRateLimit(extractClientIp(request.headers));
+
+  if (!rateLimit.allowed) {
+    return new NextResponse("Too Many Requests", {
+      status: 429,
+      headers: {
+        ...createRateLimitHeaders(rateLimit),
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   const [baseUrl, siteConfig, catalog] = await Promise.all([
     getSiteUrl(),
     getSiteConfig(),
@@ -61,6 +80,7 @@ export async function GET() {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": TEXT_CACHE_CONTROL,
+      ...createRateLimitHeaders(rateLimit),
     },
   });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchDocs } from "@/lib/search";
+import { sanitizeLocale, searchDocs } from "@/lib/search";
 import {
   checkSearchRateLimit,
   createRateLimitHeaders,
@@ -10,15 +10,22 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// 与 MCP 端点对齐：超长查询只可能是异常流量
+const MAX_QUERY_LENGTH = 200;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() || "";
-  const locale = searchParams.get("locale") || "zh";
+  const locale = sanitizeLocale(searchParams.get("locale"));
   const clientIp = extractClientIp(request.headers);
   const rateLimit = checkSearchRateLimit(clientIp);
 
   if (!query) {
     return NextResponse.json({ results: [] });
+  }
+
+  if (query.length > MAX_QUERY_LENGTH) {
+    return NextResponse.json({ results: [], error: "query_too_long" }, { status: 400 });
   }
 
   if (!rateLimit.allowed) {

@@ -9,6 +9,7 @@ import remarkMath from "remark-math";
 import rehypeSlug from "rehype-slug";
 import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
+import { rehypeSanitizeHtml } from "@/lib/rehype-sanitize-html";
 import Prism from "prismjs";
 import path from "path";
 import { stripFrontmatter } from "@/lib/markdown";
@@ -424,7 +425,7 @@ export function DocContentClient({ content, filePath, currentPath }: DocContentC
     <div ref={articleRef} className="docs-prose">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks, remarkMath, remarkCodeTabs, remarkPreserveBlankLines]}
-        rehypePlugins={[rehypeSlug, rehypeRaw, rehypeKatex]}
+        rehypePlugins={[rehypeSlug, rehypeRaw, rehypeSanitizeHtml, rehypeKatex]}
         components={markdownComponents}
       >
         {processedContent}
